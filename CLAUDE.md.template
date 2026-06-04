@@ -1,0 +1,43 @@
+# Project: <NAME>
+
+<!-- One paragraph: what this project is, who uses it, what "done" means here.
+     Delete every section that doesn't apply — a short accurate CLAUDE.md
+     beats a long aspirational one. -->
+
+## Commands
+
+<!-- The exact commands Claude should use. Wrong/missing commands are the #1
+     source of wasted turns. -->
+
+- Build: `<command>`
+- Test (all): `<command>`
+- Test (single file): `<command>`
+- Lint/format: `<command>`
+- Run locally: `<command>`
+
+## Architecture
+
+<!-- Only what's NOT obvious from reading the code: the 3-5 facts you'd tell a
+     new senior dev on day one. Entry points, where the boundaries are, what
+     talks to what. Not a file listing. -->
+
+## Conventions
+
+- Match the style of surrounding code over any general rule.
+- <naming / error-handling / logging conventions specific to this repo>
+
+## Workflow
+
+- Before non-trivial changes: plan first (use the `planner` agent or `/implement`).
+- After changes: run lint + the relevant tests before declaring done.
+- Bug fixes: reproduce first (`/fix`), then fix, then prove the repro passes.
+- Never commit unless explicitly asked; use `/commit` when asked.
+
+## Boundaries
+
+<!-- Things Claude must not touch: generated files, vendored code, migration
+     history, secrets. Be explicit — these are cheap to write and expensive
+     to violate. -->
+
+- Do not edit: `<generated/vendored paths>`
+- Secrets/credentials never go in code, commits, or prompts.
