@@ -1,7 +1,7 @@
 # Project: <NAME>
 
 <!-- One paragraph: what this project is, who uses it, what "done" means here.
-     Delete every section that doesn't apply — a short accurate CLAUDE.md
+     Delete every section that doesn't apply — a short accurate file
      beats a long aspirational one. -->
 
 ## Commands
@@ -25,13 +25,6 @@
 
 - Match the style of surrounding code over any general rule.
 - <naming / error-handling / logging conventions specific to this repo>
-
-## Workflow
-
-- Before non-trivial changes: plan first (use the `planner` agent or `/implement`).
-- After changes: run lint + the relevant tests before declaring done.
-- Bug fixes: reproduce first (`/fix`), then fix, then prove the repro passes.
-- Never commit unless explicitly asked; use `/commit` when asked.
 
 ## Boundaries
 

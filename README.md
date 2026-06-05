@@ -8,7 +8,8 @@ skills, subagents, settings, and a `CLAUDE.md` template that together define the
 
 ```
 jarvis/
-├── CLAUDE.md.template      # Project-instructions template → becomes CLAUDE.md in the target repo
+├── CLAUDE.md               # Kit-managed instructions (always overwritten on install)
+├── ProjectCLAUDE.md.template  # Project-specific template → becomes ProjectCLAUDE.md in the target repo
 ├── install.sh              # Deploys this kit into a target project
 └── .claude/
     ├── settings.json       # Baseline permissions (safe defaults, stack-agnostic)
@@ -22,6 +23,7 @@ jarvis/
         ├── fix/            # repro-first bug fixing
         ├── commit/         # scoped commits + hygiene checks
         ├── handoff/        # session handoff doc + CLAUDE.md update
+        ├── sync-docs/      # hierarchically indexed codebase docs in .claude/docs/
         ├── grill-me/       # stress-test a plan via relentless interview †
         ├── caveman/        # ultra-terse response mode †
         └── write-a-skill/  # meta: author new skills properly †
@@ -44,9 +46,10 @@ Deploy into a project:
 - **Link mode**: one source of truth, instant propagation — but the symlink only
   works on your machine, so don't commit it in shared repos.
 
-The script never overwrites an existing `CLAUDE.md`; it copies the template to
-`CLAUDE.md` only if none exists. Per-skill/agent files are overwritten on
-re-install (that's the point — updates propagate).
+`CLAUDE.md` is kit-managed and always overwritten on re-install (same as
+skills/agents), so workflow and skill updates propagate automatically. Put
+project-specific context in `ProjectCLAUDE.md` — that file is only seeded from
+the template on first install and never touched again.
 
 ## Conventions
 
@@ -57,6 +60,10 @@ re-install (that's the point — updates propagate).
   `name:` frontmatter field, not the filename.
 - **Local overrides** never go in this repo: use `.claude/settings.local.json`
   and `CLAUDE.local.md` in the target project (gitignored there).
+- **Codebase docs** are generated *in the target repo* under `.claude/docs/`
+  by `/sync-docs` (first run bootstraps, later runs update incrementally from
+  the git diff since the last sync). They're meant to be committed there;
+  nothing doc-related lives in this kit except the skill itself.
 - Malformed frontmatter fails *silently* — a broken skill simply doesn't load.
   After editing, verify with `/skills` or by invoking the skill in a session.
 

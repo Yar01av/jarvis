@@ -56,11 +56,16 @@ else
   fi
 fi
 
-if [[ ! -f "$TARGET/CLAUDE.md" ]]; then
-  cp "$SRC/CLAUDE.md.template" "$TARGET/CLAUDE.md"
-  echo "COPY  CLAUDE.md (from template — fill in the project-specific sections)"
+# CLAUDE.md is kit-owned — always overwrite so workflow/skill updates propagate.
+cp "$SRC/CLAUDE.md" "$TARGET/CLAUDE.md"
+echo "COPY  CLAUDE.md (kit-managed — do not edit; put project context in ProjectCLAUDE.md)"
+
+# ProjectCLAUDE.md is project-owned — only seed it from the template if missing.
+if [[ ! -f "$TARGET/ProjectCLAUDE.md" ]]; then
+  cp "$SRC/ProjectCLAUDE.md.template" "$TARGET/ProjectCLAUDE.md"
+  echo "COPY  ProjectCLAUDE.md (from template — fill in the project-specific sections)"
 else
-  echo "KEEP  CLAUDE.md (already exists)"
+  echo "KEEP  ProjectCLAUDE.md (already exists)"
 fi
 
 # Make sure local-only files stay out of the target's git history.
