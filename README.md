@@ -23,7 +23,7 @@ jarvis/
         ├── fix/            # repro-first bug fixing
         ├── commit/         # scoped commits + hygiene checks
         ├── handoff/        # session handoff doc + CLAUDE.md update
-        ├── sync-docs/      # hierarchically indexed codebase docs in .claude/docs/
+        ├── sync-docs/      # hierarchically indexed codebase docs in docs/
         ├── grill-me/       # stress-test a plan via relentless interview †
         ├── caveman/        # ultra-terse response mode †
         └── write-a-skill/  # meta: author new skills properly †
@@ -60,7 +60,7 @@ the template on first install and never touched again.
   `name:` frontmatter field, not the filename.
 - **Local overrides** never go in this repo: use `.claude/settings.local.json`
   and `CLAUDE.local.md` in the target project (gitignored there).
-- **Codebase docs** are generated *in the target repo* under `.claude/docs/`
+- **Codebase docs** are generated *in the target repo* under `docs/`
   by `/sync-docs` (first run bootstraps, later runs update incrementally from
   the git diff since the last sync). They're meant to be committed there;
   nothing doc-related lives in this kit except the skill itself.

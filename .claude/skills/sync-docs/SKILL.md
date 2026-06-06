@@ -1,18 +1,18 @@
 ---
 name: sync-docs
-description: Build or update the hierarchically indexed codebase documentation in .claude/docs/ — bootstraps the full tree on first run, then updates only the parts touched by commits since the last sync.
+description: Build or update the hierarchically indexed codebase documentation in docs/ — bootstraps the full tree on first run, then updates only the parts touched by commits since the last sync.
 argument-hint: "[optional: area to focus on, e.g. a directory]"
 disable-model-invocation: true
 ---
 
-Keep `.claude/docs/` — the agent-facing codebase map — in sync with the code.
+Keep `docs/` — the agent-facing codebase map — in sync with the code.
 If arguments were passed, treat them as a scope hint and prioritize that area:
 $ARGUMENTS
 
 ## The doc tree
 
-- Root index: `.claude/docs/INDEX.md`. One node per significant source
-  directory: `.claude/docs/<relative-dir-path>/INDEX.md`, mirroring the source
+- Root index: `docs/INDEX.md`. One node per significant source
+  directory: `docs/<relative-dir-path>/INDEX.md`, mirroring the source
   tree. The mirroring matters — it's what makes incremental updates cheap
   (changed path → doc node is a pure path mapping).
 - Each index holds: a short description of what the directory is for, the
@@ -23,7 +23,7 @@ $ARGUMENTS
 - "Significant" = a directory a new senior dev would need oriented on.
   Enumerate via `git ls-files` (respects `.gitignore`, so vendored/generated
   dirs drop out for free); additionally skip anything listed under Boundaries
-  in CLAUDE.md, and never document `.claude/docs/` itself. Shallow repos may
+  in CLAUDE.md, and never document `docs/` itself. Shallow repos may
   need only the root index — don't manufacture depth.
 - The root index frontmatter tracks freshness:
 
@@ -35,13 +35,19 @@ $ARGUMENTS
 
 ## 1. Determine mode
 
-- `.claude/docs/INDEX.md` missing → **bootstrap** (step 2).
-- Present → read `synced-commit` and run
-  `git diff --name-only <synced-commit>..HEAD -- . ':!.claude/docs'`.
+- `docs/INDEX.md` missing → **bootstrap** (step 2). If `docs/` exists but
+  holds hand-written documentation (no sync-managed `INDEX.md`), don't
+  clobber or rewrite it — ask the user how to proceed before writing
+  anything. Hand-written files the user wants kept simply stay in place;
+  the sync only ever owns the `INDEX.md` files it generates.
+- Present but without `synced-commit` frontmatter → that index isn't ours;
+  same rule: ask before touching it.
+- Present with `synced-commit` → read it and run
+  `git diff --name-only <synced-commit>..HEAD -- . ':!docs'`.
   The exclusion is load-bearing: without it, the previous sync's own doc
   commit makes the diff non-empty forever and every run churns.
   - Diff empty → docs are current. Say so, do step 4 (self-heal) anyway, stop.
-  - `synced-commit` missing/invalid (e.g. after a history rewrite) → treat as
+  - `synced-commit` invalid (e.g. after a history rewrite) → treat as
     bootstrap, but preserve still-accurate existing content.
 - Note: sync covers committed work only. If the working tree is dirty, mention
   that uncommitted changes won't be reflected until committed.
@@ -76,12 +82,12 @@ Set `synced-commit` in the root index frontmatter to the current `HEAD` sha
 ## 4. Self-heal the CLAUDE.md reference
 
 Check that `CLAUDE.md` tells future sessions to read the docs. If a
-"Documentation" section referencing `.claude/docs/INDEX.md` is missing, add:
+"Documentation" section referencing `docs/INDEX.md` is missing, add:
 
 ```markdown
 ## Documentation
 
-- Read `.claude/docs/INDEX.md` at the start of non-trivial work; drill into
+- Read `docs/INDEX.md` at the start of non-trivial work; drill into
   the per-directory indexes for areas you'll touch. Keep it honest: run
   `/sync-docs` after changes that alter structure or behavior.
 ```
