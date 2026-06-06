@@ -1,7 +1,7 @@
 ---
 name: debugger
 description: Root-causes a bug, failing test, or unexpected behavior. Use when something is broken and the cause isn't obvious — it diagnoses and proposes the fix.
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash, WebSearch, WebFetch
 model: inherit
 ---
 

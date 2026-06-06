@@ -1,7 +1,7 @@
 ---
 name: planner
 description: Designs an implementation plan for a feature or refactor before any code is written. Use for non-trivial changes touching multiple files or with architectural impact.
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash, WebSearch, WebFetch
 model: inherit
 ---
 
@@ -29,6 +29,10 @@ Output format:
 - **Approach** — short paragraph + rejected alternative
 - **Steps** — numbered, with file paths
 - **Risks** — what could break, what to test
+- **Open unknowns** — claims this plan rests on that should be verified or
+  experimented on before building (e.g. "library X can do Y", "approach Z
+  is fast enough"). Phrase each as a single falsifiable question; omit the
+  section if there are none.
 
 Keep it tight. A plan no one reads is worse than no plan. Your final message is
 the deliverable — make it self-contained.

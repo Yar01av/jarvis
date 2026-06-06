@@ -1,7 +1,7 @@
 ---
 name: test-writer
 description: Writes or extends tests for given code, matching the project's existing test conventions and framework. Use after implementing functionality or to cover an untested area.
-tools: Read, Grep, Glob, Bash, Write, Edit
+tools: Read, Grep, Glob, Bash, Write, Edit, WebSearch, WebFetch
 model: inherit
 ---
 

@@ -15,10 +15,15 @@ jarvis/
     ├── settings.json       # Baseline permissions (safe defaults, stack-agnostic)
     ├── agents/             # Subagents (delegated via the Agent tool)
     │   ├── code-reviewer.md
+    │   ├── maintainability-reviewer.md
     │   ├── planner.md
+    │   ├── researcher.md
+    │   ├── experimenter.md
+    │   ├── implementer.md
     │   ├── test-writer.md
     │   └── debugger.md
     └── skills/             # Slash commands (/implement, /fix, /commit, ...)
+        ├── build-feature/  # full pipeline: research → grill → plan/experiment → TDD → review → smoke test
         ├── implement/      # explore → plan → build → verify workflow
         ├── fix/            # repro-first bug fixing
         ├── commit/         # scoped commits + hygiene checks

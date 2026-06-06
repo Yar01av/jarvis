@@ -22,6 +22,7 @@ Project-specific context lives in `ProjectCLAUDE.md`.
 
 Run `/skills` to see all loaded skills. Key ones this kit ships:
 
+- `/build-feature` — full feature pipeline: research → grill → plan/experiment → TDD → review → smoke test
 - `/implement` — explore → plan → build → verify
 - `/fix` — repro-first bug fixing
 - `/commit` — scoped commit with hygiene checks

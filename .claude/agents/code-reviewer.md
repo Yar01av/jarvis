@@ -1,7 +1,7 @@
 ---
 name: code-reviewer
 description: Reviews a diff or set of files for correctness bugs, security issues, and unnecessary complexity. Use after completing a logical chunk of work, before committing.
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash, WebSearch, WebFetch
 model: inherit
 ---
 
