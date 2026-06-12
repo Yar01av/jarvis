@@ -21,7 +21,8 @@ jarvis/
     │   ├── experimenter.md
     │   ├── implementer.md
     │   ├── test-writer.md
-    │   └── debugger.md
+    │   ├── debugger.md
+    │   └── librarian.md    # owns code-derived docs (codebase map + feature docs)
     └── skills/             # Slash commands (/implement, /fix, /commit, ...)
         ├── build-feature/  # full pipeline: research → grill → plan/experiment → TDD → review → smoke test
         ├── implement/      # explore → plan → build → verify workflow

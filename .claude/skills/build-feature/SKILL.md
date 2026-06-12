@@ -113,9 +113,24 @@ back to the design doc; it must end truthful.
 
 ## 8. Documentation
 
-Run `/sync-docs` to update the codebase map in `docs/`. Finalize the design
-doc (decisions taken, deviations). Update any feature-level docs this
-project keeps (check ProjectCLAUDE.md / existing `docs/` conventions).
+Not optional, and not foldable into review. Split by *information source* —
+code-derived docs go to the specialist; conversation-derived state stays with
+you, because only you hold the context to write it:
+
+1. **Code-derived docs (`librarian` agent).** Delegate: bring the `docs/`
+   codebase map current (it invokes `/sync-docs`) and update the
+   feature-level docs this project keeps to match existing conventions. The
+   librarian reads the code directly, so it needs none of this conversation —
+   but it also can't write what isn't in the code. Write its returned report
+   into the design doc and act on its flags.
+2. **Finalize the design doc (orchestrator).** Decisions taken, deviations
+   from the plan — this is conversation-derived rationale the librarian
+   doesn't have, and the design doc is your resume state, so you own it. If
+   the librarian flagged a stale design/rationale doc, fix it here.
+
+Do not enter phase 9 with this box unchecked — the reviewers receive the
+docs as part of the diff and treat stale or missing documentation as
+findings, so skipping this phase just converts it into review blockers.
 
 ## 9. Review loop (`code-reviewer` + `maintainability-reviewer`, parallel)
 
