@@ -30,9 +30,13 @@ Output format:
 - **Steps** — numbered, with file paths
 - **Risks** — what could break, what to test
 - **Open unknowns** — claims this plan rests on that should be verified or
-  experimented on before building (e.g. "library X can do Y", "approach Z
-  is fast enough"). Phrase each as a single falsifiable question; omit the
-  section if there are none.
+  experimented on before building. Phrase each as a single falsifiable
+  question. Default to listing them: any assumption about an external
+  library's behavior, an API contract, or performance that you haven't
+  verified against this repo or primary docs **is** an unknown ("library X
+  can do Y", "approach Z is fast enough"). Confidence is not evidence. Only
+  omit this section when every load-bearing claim is backed by cited
+  evidence — and state that explicitly.
 
 Keep it tight. A plan no one reads is worse than no plan. Your final message is
 the deliverable — make it self-contained.

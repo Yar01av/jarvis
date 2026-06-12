@@ -16,6 +16,15 @@ have agents write the doc themselves: isolated/parallel agents would race or
 (in worktrees) silently lose the write. After each phase, check off its box
 in the design doc's phase checklist, which is also the resume mechanism.
 
+**Experimentation is a floating capability, not a fixed phase.** Whenever
+any phase surfaces a falsifiable uncertainty — research claims an unproven
+library fit, the go/no-go hinges on an unverified capability, the plan
+rests on an assumption — dispatch `experimenter` agents *then and there*
+and loop back to the phase that raised the question with the verdicts.
+Expect multiple back-and-forth cycles across the pipeline; phase 4 is just
+where the loop is most common, not the only place it's allowed. All
+verdicts accumulate in the design doc's `## Experiments`.
+
 Hard rule for the whole pipeline: **never modify `.claude/` or the
 kit-managed `CLAUDE.md` in this project.** Improvement ideas for those are
 collected and presented to the user as suggestions only.
@@ -54,21 +63,28 @@ collected and presented to the user as suggestions only.
 Delegate: assess whether this should be built at all (existing libraries /
 OSS / prior art), a light technical overview, and known pitfalls. The agent
 returns findings with sources, a build / buy / drop recommendation, and open
-questions for planning. Write its result into the design doc under
-`## Research`.
+questions split into *decisions for the human* (feed the grill) and
+*empirical uncertainties* (track these — they must not get lost between
+phases). Spike uncertainties **now** when the build/buy/drop call or the
+upcoming grill would benefit from the answer (research ↔ experiment is a
+loop, per the floating-experimentation rule); the rest carry forward to
+planning. Write the result into the design doc under `## Research`.
 
 ## 2. Go/no-go (orchestrator, gate)
 
 Present the recommendation to the user: **build / use library X / drop**.
-Record the decision in the design doc. On "drop", stop. On "library",
+Don't carry a guess into this gate: if the recommendation hinges on an
+unverified claim, run the experiment first. Record the decision in the
+design doc. On "drop", stop. On "library",
 redirect: the remaining phases apply to the integration, not a from-scratch
 build.
 
 ## 3. Requirements (orchestrator, interactive)
 
-Invoke `/grill-me`, seeded with the research section and its open questions.
-Distill the interview into `## Requirements`: scope, acceptance criteria,
-edge cases, non-goals.
+Invoke `/grill-me`, seeded with the research section and its *decisions for
+the human* (the empirical uncertainties are not grill material — they wait
+for the experimenter). Distill the interview into `## Requirements`: scope,
+acceptance criteria, edge cases, non-goals.
 
 ## 4. Architecture ↔ experimentation loop
 
@@ -78,6 +94,15 @@ edge cases, non-goals.
   marking, data flow, Mermaid diagrams (component + sequence where
   meaningful), a named test list (unit + integration), and **Open
   unknowns** — claims the plan rests on that need empirical verification.
+  Pass the research phase's *empirical uncertainties* into this prompt and
+  require a disposition for each: resolved with cited evidence, needs a
+  user decision (→ plan gate), or open unknown (→ experiment). None may
+  silently disappear.
+- **Skepticism check**: a first-cycle plan with zero open unknowns on a
+  non-trivial feature is a smell, not a green light — especially when
+  research flagged uncertainties. Challenge it once ("which of these claims
+  have you actually verified?") before accepting. Bias toward
+  experimenting: an hour of spiking is cheaper than a wrong architecture.
 - **Experiment** (`experimenter` agent, one per unknown, parallel when
   independent, `isolation: worktree`): each agent gets ONE question and
   answers it with the smallest spike that yields a verdict. Spike code never

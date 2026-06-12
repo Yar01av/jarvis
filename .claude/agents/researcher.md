@@ -29,7 +29,11 @@ Your final message is the research brief, self-contained:
 - **Build / buy / drop recommendation** — with rationale and the main
   trade-off
 - **Technical overview & pitfalls** — short
-- **Open questions for planning** — the things a human should weigh in on
+- **Open questions for planning** — split in two: *decisions for the human*
+  (trade-offs to weigh in the requirements interview) and *empirical
+  uncertainties* (claims that need a spike to verify — phrase each as a
+  falsifiable question; these become experiments later, so don't fold them
+  into the human questions)
 
 Distinguish what you verified from what you infer. An honest "couldn't
 establish" beats a plausible guess.
