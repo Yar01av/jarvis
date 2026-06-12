@@ -1,8 +1,7 @@
 ---
 name: commit
-description: Stage and commit current work as one or more well-scoped commits with clear messages. Only runs when explicitly invoked.
+description: Stage and commit current work as one or more well-scoped commits with clear messages. Invoke ONLY when the user explicitly asked to commit (or a user-initiated workflow like /build-feature reached its commit phase with user approval) — never spontaneously.
 argument-hint: "[optional: message hint or scope]"
-disable-model-invocation: true
 allowed-tools: "Bash(git status) Bash(git diff *) Bash(git log *) Bash(git add *) Bash(git commit *)"
 ---
 

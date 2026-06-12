@@ -2,7 +2,6 @@
 name: sync-docs
 description: Build or update the hierarchically indexed codebase documentation in docs/ — bootstraps the full tree on first run, then updates only the parts touched by commits since the last sync.
 argument-hint: "[optional: area to focus on, e.g. a directory]"
-disable-model-invocation: true
 ---
 
 Keep `docs/` — the agent-facing codebase map — in sync with the code.
