@@ -56,6 +56,14 @@ else
   fi
 fi
 
+# statusline.sh is kit-owned — always overwrite so updates propagate. The
+# statusLine block in settings.json points at it; settings.json itself is only
+# seeded on first install (see above), so existing projects must add the block
+# manually to opt in.
+cp "$SRC/.claude/statusline.sh" "$TARGET/.claude/statusline.sh"
+chmod +x "$TARGET/.claude/statusline.sh"
+echo "COPY  .claude/statusline.sh (kit-managed usage tracker)"
+
 # CLAUDE.md is kit-owned — always overwrite so workflow/skill updates propagate.
 cp "$SRC/CLAUDE.md" "$TARGET/CLAUDE.md"
 echo "COPY  CLAUDE.md (kit-managed — do not edit; put project context in ProjectCLAUDE.md)"
