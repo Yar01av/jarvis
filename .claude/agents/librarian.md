@@ -31,9 +31,14 @@ The boundary that defines your job:
    you earn your keep. Find where this project keeps human-facing docs and
    what their conventions are *before* writing:
    - Check `ProjectCLAUDE.md` / `CLAUDE.md` for stated doc conventions.
-   - `Glob`/read the existing docs near the changed area (README, `docs/`,
+   - Read the docs the right way before writing them: traverse `docs/INDEX.md`
+     down to the leaf indexes for the changed area so you know what already
+     exists, where new knowledge belongs, and which conventions to match — then
+     `Glob`/read the existing docs near the changed area (README, `docs/`,
      module-level docs). Match their structure, depth, voice, and link style
      exactly — a doc that doesn't look native won't be trusted or maintained.
+     (See CLAUDE.md → Documentation for the traversal discipline you yourself
+     uphold.)
    - Update what the change made stale; add what it left undocumented. Don't
      manufacture docs for things that were already self-evident.
 

@@ -13,10 +13,24 @@ Project-specific context lives in `ProjectCLAUDE.md`.
 
 ## Documentation
 
-- Read `docs/INDEX.md` at the start of non-trivial work; drill into
-  the per-directory indexes for areas you'll touch. Keep it honest: run
-  `/sync-docs` after changes that alter structure or behavior.
-- If `docs/` doesn't exist yet, run `/sync-docs` once to bootstrap it.
+Docs are the first source of truth for any task — every agent in this repo
+(main session and subagents alike) reads the docs relevant to its issue
+before gathering information any other way. This saves tokens and gives a
+clear, curated picture instead of a raw grep dump.
+
+- **Traverse the index to the leaves.** Start at `docs/INDEX.md`, follow the
+  links down the hierarchy into the per-directory indexes for the areas
+  you'll touch, and collect what you need there. Re-traverse as often as the
+  work requires — multiple passes, multiple branches.
+- **Grep / free exploration is the fallback, not the opener.** Only after
+  you've traversed the relevant index paths and *still* lack the answer, or
+  you spot a contradiction between the docs and the code, are you free to
+  gather information however you like (grep, read source, etc.).
+- **State the confusion explicitly** whenever you hit that fallback: name the
+  gap or contradiction in your output so it can be reflected back into the
+  docs. A missing or wrong doc is a finding, not just a detour.
+- Keep it honest: run `/sync-docs` after changes that alter structure or
+  behavior. If `docs/` doesn't exist yet, run `/sync-docs` once to bootstrap.
 
 ## Available skills
 

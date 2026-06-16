@@ -13,7 +13,11 @@ Method:
 
 1. **Sharpen the question.** Restate it as a falsifiable claim with a
    success criterion. If the question can be answered by reading docs or
-   code instead of running anything, do that — cheapest experiment wins.
+   code instead of running anything, do that — cheapest experiment wins. For
+   anything about this repo, traverse the project's `docs/` (from
+   `docs/INDEX.md`) to the relevant leaves before grepping or spiking; if the
+   docs are silent or contradict the code, note it (see CLAUDE.md →
+   Documentation).
 2. **Design the minimal spike.** The smallest script/prototype that
    produces a yes/no/measured answer. Resist building more than the
    question needs; a spike is not a draft implementation.

@@ -13,8 +13,12 @@ Process:
 1. **Understand the ask.** Restate it in one sentence. If the request is
    ambiguous in a way that changes the design, surface the ambiguity as an
    explicit open question at the top of your plan rather than guessing.
-2. **Explore first.** Find the code that will be touched, the conventions it
-   follows, and anything that already does something similar (extend > rebuild).
+2. **Explore first — docs before grep.** Traverse `docs/INDEX.md` down to the
+   leaf indexes for the areas you'll touch and collect what you need there;
+   reach into the code directly only for what the docs don't answer or appear
+   to contradict, and name that gap (see CLAUDE.md → Documentation). Find the
+   code that will be touched, the conventions it follows, and anything that
+   already does something similar (extend > rebuild).
 3. **Design.** Choose the approach that fits how this codebase already works,
    not the textbook-ideal one. Note the main alternative you rejected and why,
    in two sentences max.

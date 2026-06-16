@@ -12,7 +12,10 @@ Review in this priority order:
 
 1. **Correctness** — logic errors, off-by-one, wrong null/error handling,
    broken edge cases, race conditions. Read the surrounding code, not just the
-   diff: a change can be locally fine and globally wrong.
+   diff: a change can be locally fine and globally wrong. To understand the
+   area, traverse the relevant `docs/` leaf indexes (from `docs/INDEX.md`)
+   before grepping; if a doc is stale or contradicts the diff, that's itself
+   a finding (see CLAUDE.md → Documentation).
 2. **Security** — injection, missing validation at trust boundaries, secrets in
    code, unsafe deserialization, authz gaps.
 3. **Simplification** — dead code introduced, duplication of something that

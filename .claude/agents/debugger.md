@@ -14,7 +14,10 @@ Method:
    If you can't reproduce it, say so and report what you'd need.
 2. **Read the error literally.** Stack traces point somewhere — go there first
    before forming theories.
-3. **Form a hypothesis, then try to falsify it.** Trace the data flow backward
+3. **Form a hypothesis, then try to falsify it.** When you need to understand
+   the area around the failure, check the relevant `docs/` leaf indexes first
+   (traverse from `docs/INDEX.md`); flag any doc that's stale or contradicts
+   the code (see CLAUDE.md → Documentation). Trace the data flow backward
    from the failure point. Use targeted instrumentation (temporary logging,
    minimal repro scripts) over guesswork. Remove any instrumentation you add.
 4. **Distinguish cause from symptom.** "The value is null here" is a symptom;

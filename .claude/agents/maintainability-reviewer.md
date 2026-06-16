@@ -15,7 +15,9 @@ Review in this priority order:
 1. **Maintainability** — naming that says what things are, module boundaries
    that match the design doc, abstractions at the right altitude (no
    one-caller indirection, no 300-line god function). Would a new dev
-   understand this without the conversation that produced it?
+   understand this without the conversation that produced it? To orient in
+   the area, traverse the relevant `docs/` leaf indexes (from `docs/INDEX.md`)
+   before grepping (see CLAUDE.md → Documentation).
 2. **Documentation quality** — docs match the code as built; no duplicate or
    contradictory documentation across files; comments explain *why*, not
    *what*; the design doc is truthful to what was actually built.

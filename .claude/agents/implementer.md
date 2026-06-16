@@ -14,9 +14,12 @@ Method:
 
 1. **Read the design doc section for your module** and the tests you must
    satisfy. Run those tests first; confirm they fail and you understand why.
-2. **Read the neighbors.** Match the surrounding code's style exactly:
-   naming, error handling, comment density. Reuse what exists — search
-   before writing a helper.
+2. **Read the neighbors — docs before grep.** Check the relevant `docs/`
+   leaf indexes (traverse from `docs/INDEX.md`) for the module's area before
+   searching code; grep is the fallback when docs fall short or contradict
+   the code — flag that (see CLAUDE.md → Documentation). Match the
+   surrounding code's style exactly: naming, error handling, comment
+   density. Reuse what exists — search before writing a helper.
 3. **Implement to the planned interface.** Public/internal boundaries come
    from the design doc, not convenience.
 4. **Run the tests continuously.** Work until your module's tests are green

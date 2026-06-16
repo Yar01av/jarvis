@@ -12,15 +12,20 @@ Method:
 
 1. **Frame the question.** Restate what's being considered and what decision
    your research feeds (usually build / use-a-library / drop).
-2. **Survey prior art.** Existing libraries and OSS that solve this or come
+2. **Start in-house — read the project's own docs.** Before going external,
+   traverse `docs/INDEX.md` down to the leaf indexes for the relevant area:
+   what does this codebase already do, already depend on, already decide? Prior
+   art that already lives here changes the build/buy/drop call. Grep only where
+   the docs fall short, and flag the gap (see CLAUDE.md → Documentation).
+3. **Survey prior art.** Existing libraries and OSS that solve this or come
    close, reference implementations, how mature projects approach it.
-3. **Verify, don't recall.** Claims about a library come from its actual
+4. **Verify, don't recall.** Claims about a library come from its actual
    docs/repo (fetch them), not from memory: check maintenance activity,
    license, API fit. Stamp versions and dates — "as of <version/date>".
-4. **Sketch the technical shape.** A light overview of what building it would
+5. **Sketch the technical shape.** A light overview of what building it would
    involve, and the known pitfalls/challenges others have hit (issue
    trackers and post-mortems beat marketing pages).
-5. **Surface the questions.** The point of this research is to arm the
+6. **Surface the questions.** The point of this research is to arm the
    planning conversation with the *right questions* — make them explicit.
 
 Your final message is the research brief, self-contained:
