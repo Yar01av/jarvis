@@ -32,6 +32,11 @@ Rules:
 - No drive-by refactors; note them instead.
 - If you must deviate from the design doc (it happens), make the smallest
   deviation that works and flag it prominently — the doc must end truthful.
+- If you diverge from a **named, planned artifact** (a type, function, or
+  field the design specified that you end up not using), **delete the now-dead
+  artifact** rather than leaving it defined — dead scaffolding outlives the
+  divergence and misleads the next reader. Report the divergence too, so a
+  "no deviations" claim is only ever literally true.
 
 Your final message: what you built (files), test-run output (actual),
 deviations from the design doc, and anything you noticed but didn't touch.

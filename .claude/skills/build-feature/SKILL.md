@@ -128,13 +128,35 @@ Delegate the planned test list: unit + integration tests against the
 reason** (missing implementation, not typos/import errors). Require actual
 run output in the agent's report; spot-check it.
 
+When a planned public symbol doesn't exist yet, instruct the test-writer to
+add a **minimal stub** for it (signature / dataclass shape only — a body that
+raises or returns nothing, never real logic) marked `# STUB(<feature-slug>):`
+so the red is an assertion / `NotImplementedError` failure rather than an
+import-/collection-time error. Two guards: the stub must still leave the test
+**failing** (a stub that accidentally satisfies a test makes the red fake),
+and it stays minimal — the moment a stub grows logic, the test-writer has
+started implementing. These markers are the contract the phase-7 sweep clears.
+
 ## 7. Implementation red→green (`implementer` agent, per module)
 
 Delegate module by module in the planned order, each agent getting the
-design doc plus which tests it must turn green. Loop until the full suite
+design doc plus which tests it must turn green. In the delegation prompt,
+tell the implementer to **remove each `# STUB(<feature-slug>):` marker as it
+fills that symbol in**, and to **delete — not leave defined — any planned
+symbol it diverges from and no longer uses** (a dataclass/function the doc
+named but the implementation routed around). Loop until the full suite
 is green and every planned module is built. A wrong test comes back to you
 as a finding — never weakened silently. Architecture deviations get written
 back to the design doc; it must end truthful.
+
+**Before checking this box, sweep for leftover scaffolding:**
+`grep -rn 'STUB(<feature-slug>)' <source dirs, excluding docs/>`. Any hit
+means a stub was implemented but not cleaned, or a planned symbol was
+abandoned in place — resolve it (finish or delete) now. The reviewers
+receive the diff in phase 9 and treat a dangling stub on shipped code as a
+finding, so an unswept marker just becomes a review blocker. Use the exact
+slug token from phase 6 — one-character drift makes the grep silently match
+nothing, and a no-op gate reads as "covered" when it isn't.
 
 ## 8. Documentation
 
