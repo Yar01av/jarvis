@@ -1,7 +1,7 @@
 ---
 name: build-feature
 description: Full feature pipeline — research → go/no-go → grill → plan/experiment loop → TDD → docs → independent review → smoke test → user testing → commit → kit retrospective. The main session orchestrates; every work phase runs in a dedicated subagent.
-argument-hint: "<feature description, or existing feature slug to resume>"
+argument-hint: "<feature description, or existing feature slug to resume> [--from <phase 1-13 or name>]"
 disable-model-invocation: true
 ---
 
@@ -34,16 +34,18 @@ collected and presented to the user as suggestions only.
 - Derive a short `<feature-slug>` from the arguments.
 - If `docs/designs/<feature-slug>.md` exists: make sure you're on
   `feature/<slug>` first (`git checkout`; recreate the branch if it's gone),
-  then read the checklist and resume at the first unchecked phase. Tell the
-  user where you're picking up. A fresh session typically starts on main —
-  resuming without the checkout writes feature code to the wrong branch.
+  then read the checklist. Tell the user where you're picking up. A fresh
+  session typically starts on main — resuming without the checkout writes
+  feature code to the wrong branch.
 - Otherwise: warn if the working tree is dirty, create branch
-  `feature/<slug>`, and seed the design doc with this checklist:
+  `feature/<slug>`, and seed the design doc with this checklist (applying
+  `--from`, below, before you start work):
 
   ```markdown
   # <Feature name>
 
   ## Phases
+  <!-- [ ] todo · [x] done · [-] skipped (--from) -->
   - [ ] 1 Research
   - [ ] 2 Go/no-go
   - [ ] 3 Requirements (grill)
@@ -59,10 +61,58 @@ collected and presented to the user as suggestions only.
   - [ ] 13 Kit retrospective
   ```
 
+- **Then (both branches), begin work at the first `[ ]` phase in the
+  checklist.** This is the single control rule that routes every run — fresh,
+  resumed, or skipped. Treat `[x]` (done) and `[-]` (skipped via `--from`)
+  **identically: already handled — never execute or resume into them.** With
+  no `--from`, the first `[ ]` is phase 1, so a normal run starts at Research.
+  With `--from 4`, phases 1-3 are `[-]`, so you start at phase 4. Announce the
+  starting phase to the user.
+
+### Skipping the front phases (`--from`)
+
+For a tight feature that needs little or no prior research, the user may pass
+`--from <phase>` (a number `1-13` or a phase name like `plan`/`planner`) to
+start partway in. **No new control path** — at seed time, mark every phase
+*before* the target as `[-]` (skipped — never `[x]`, which would claim work
+that never happened). The "begin at the first `[ ]` phase" rule above then
+lands you on the target. Note the skip in the design doc so the record stays
+truthful.
+
+Guardrails:
+
+- **Only the front phases (1-3: Research, Go/no-go, Requirements) are freely
+  skippable.** The tests → implementation → review spine (6+) is mandatory —
+  refuse to skip past it; that's where correctness is enforced (this mirrors
+  CE's own "skip ideation, never skip review"). Skipping straight to 4
+  (planner) is the common, supported case.
+- **No fake sections.** Don't fabricate a Requirements or Research section for
+  a skipped phase. When you skip to the planner (4), pass it the feature
+  description directly and instruct it to surface any missing context as
+  **Open unknowns**. The phase 5 plan-gate is the safety net — the user catches
+  a wrong abstraction there before any test is written.
+- If a downstream phase turns out to genuinely need a skipped phase's output,
+  say so and offer to run that phase now rather than guessing.
+
+### Stopping early (`--to`)
+
+`--to <phase>` runs the pipeline through the target phase and then **stops**
+instead of continuing to commit/retrospective — e.g. `--to 5` for a plan-only
+run (architecture + sign-off, no code), or `--to plan`. Combine with `--from`
+for a slice (`--from 4 --to 5`). On reaching the target, check its box, tell
+the user where you stopped and how to resume (`/build-feature <slug>` picks up
+at the next unchecked phase), and stop — do not run later phases. `--to` may
+land before the test/impl spine (a plan-only run is fine); it just defers the
+spine to a later resume, it never skips it.
+
 ## 1. Research (`researcher` agent)
 
 Delegate: assess whether this should be built at all (existing libraries /
-OSS / prior art), a light technical overview, and known pitfalls. The agent
+OSS / prior art), a light technical overview, and known pitfalls. Have the
+agent read `docs/solutions/INDEX.md` first (if it exists) as the first stop for
+prior art *within this codebase* — durable lessons captured by earlier runs
+(phase 8) live there and may already answer an open question or flag a known
+dead-end. The agent
 returns findings with sources, a build / buy / drop recommendation, and open
 questions split into *decisions for the human* (feed the grill) and
 *empirical uncertainties* (track these — they must not get lost between
@@ -175,6 +225,33 @@ you, because only you hold the context to write it:
    from the plan — this is conversation-derived rationale the librarian
    doesn't have, and the design doc is your resume state, so you own it. If
    the librarian flagged a stale design/rationale doc, fix it here.
+3. **Compound durable lessons → `docs/solutions/` (orchestrator writes).**
+   The whole point of the pipeline compounding: a non-obvious lesson this run
+   surfaced should make the *next* feature cheaper. A solution doc is
+   **conversation-derived** — only you hold the failed-experiment / gotcha
+   context — so by this phase's own source-split rule, *you* write it, not the
+   librarian (which stays code-only). Capture is **conditional, not
+   automatic**: write a doc **only when the run produced a genuinely reusable
+   lesson** — a failed experiment worth not repeating, a gotcha, a non-obvious
+   fix or constraint (much of it already sits in `## Experiments` and the plan
+   deviations). A routine build writes nothing — `docs/solutions/` must stay
+   signal-dense, not a per-feature log. When it qualifies, write
+   `docs/solutions/<category>/<slug>.md` with minimal frontmatter
+   (`name`, `description`). Keep categories light (e.g. `gotchas/`,
+   `patterns/`, `decisions/`); don't invent a deep taxonomy.
+
+   **The store self-indexes — `/sync-docs` deliberately skips `docs/` itself,
+   so don't expect the librarian to pick these up.** You maintain it: append a
+   one-line pointer (`- [title](category/slug.md) — hook`) to
+   `docs/solutions/INDEX.md` (create it the first time, MEMORY.md-style). Don't
+   wire it into the root `docs/INDEX.md` — that file is sync-managed and would
+   drop a non-source link on the next sync; cross-agent discovery rides on the
+   CLAUDE.md docs-first note instead.
+
+   **Retrieval:** the phase 1 `researcher` delegation reads
+   `docs/solutions/INDEX.md` first (already instructed), so future runs find
+   prior lessons without a grep. `/refresh-solutions` is the companion skill
+   that keeps the store curated and the index honest over time.
 
 Do not enter phase 9 with this box unchecked — the reviewers receive the
 docs as part of the diff and treat stale or missing documentation as

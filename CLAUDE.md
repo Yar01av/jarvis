@@ -29,6 +29,11 @@ clear, curated picture instead of a raw grep dump.
 - **State the confusion explicitly** whenever you hit that fallback: name the
   gap or contradiction in your output so it can be reflected back into the
   docs. A missing or wrong doc is a finding, not just a detour.
+- **Captured lessons live in `docs/solutions/`** (its own `INDEX.md`) — a
+  hand-maintained store of gotchas, dead-ends, and decisions from past work,
+  separate from the `/sync-docs` tree. Check it when a task smells like
+  something the team may have hit before. `/build-feature` writes it (phase 8)
+  and reads it (phase 1); `/refresh-solutions` curates it.
 - Keep it honest: run `/sync-docs` after changes that alter structure or
   behavior. If `docs/` doesn't exist yet, run `/sync-docs` once to bootstrap.
 
@@ -41,4 +46,5 @@ Run `/skills` to see all loaded skills. Key ones this kit ships:
 - `/fix` — repro-first bug fixing
 - `/commit` — scoped commit with hygiene checks
 - `/sync-docs` — update `docs/` after structural changes
+- `/refresh-solutions` — curate the `docs/solutions/` lessons store (prune stale, merge dupes, fix index)
 - `/handoff` — write a session handoff doc
