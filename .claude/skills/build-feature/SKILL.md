@@ -1,6 +1,6 @@
 ---
 name: build-feature
-description: Full feature pipeline — research → go/no-go → grill → plan/experiment loop → TDD → docs → independent review → smoke test → user testing → commit. The main session orchestrates; every work phase runs in a dedicated subagent.
+description: Full feature pipeline — research → go/no-go → grill → plan/experiment loop → TDD → docs → independent review → smoke test → user testing → commit → kit retrospective. The main session orchestrates; every work phase runs in a dedicated subagent.
 argument-hint: "<feature description, or existing feature slug to resume>"
 disable-model-invocation: true
 ---
@@ -56,6 +56,7 @@ collected and presented to the user as suggestions only.
   - [ ] 10 Smoke test
   - [ ] 11 User testing
   - [ ] 12 Committed
+  - [ ] 13 Kit retrospective
   ```
 
 ## 1. Research (`researcher` agent)
@@ -204,12 +205,45 @@ observed.
 
 ## 11. User testing (orchestrator, gate)
 
-Hand the running instance to the user and wait. Issues found go back to
-phase 7 (and 9 if the fix is substantial). Don't nudge; the user decides
-when this phase is done.
+Hand the running instance to the user and wait. Every issue the user finds
+re-enters the **implement → document → review** loop (phases 7 → 8 → 9) as
+one unit — code fix, docs brought current, fresh review — so docs and review
+never lag the code. No "trivial vs substantial" triage: every change makes
+the full loop. The user decides through their own testing when the loop is
+done; don't nudge. Only when they're satisfied do you proceed to commit —
+with docs and review guaranteed current against the final code.
 
 ## 12. Commit (orchestrator)
 
 On user approval, invoke `/commit` on the feature branch: implementation,
 tests, docs, and the design doc. Merging/PR is the user's call — say so and
 stop.
+
+## 13. Kit retrospective (`kit-retrospective` agent)
+
+The run is locked in — now reflect on the *pipeline that produced it*, not
+the code (the phase-9 reviewers already owned the diff). Dispatch the
+`kit-retrospective` agent to mine the raw run for kit-improvement ideas.
+
+Your only job is to hand over paths — never a summary. A summary would let
+you frame the run before the agent sees it; the agent reads the unfiltered
+transcript precisely so it isn't influenced. Resolve this session's
+transcript deterministically (concurrency-safe — session ids are unique, so
+this works even with other sessions open in the same repo):
+
+```bash
+find ~/.claude/projects -maxdepth 2 -name "$CLAUDE_CODE_SESSION_ID.jsonl"
+```
+
+Pass the agent: that transcript path, its `<session-id>/subagents/` dir (same
+path with `.jsonl` → `/subagents/`), the design doc path, and the kit
+instruction locations (`.claude/skills/build-feature/SKILL.md`,
+`.claude/agents/*.md`). The agent digests transcripts in its own context and
+returns only a short list of suggestions, so the run's bulk never enters
+yours.
+
+**Present the returned suggestions to the user verbatim** under
+`## Kit suggestions` in the design doc (folding in any the phase-9 reviewers
+already left there). Suggestions only — per the hard rule at the top, never
+modify `.claude/` or kit-managed files, even though in this repo the kit *is*
+the product. The user decides what to apply.
