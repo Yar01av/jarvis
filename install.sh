@@ -64,6 +64,36 @@ cp "$SRC/.claude/statusline.sh" "$TARGET/.claude/statusline.sh"
 chmod +x "$TARGET/.claude/statusline.sh"
 echo "COPY  .claude/statusline.sh (kit-managed usage tracker)"
 
+# Plugin keys (enabledPlugins / extraKnownMarketplaces) are kit-managed, but
+# settings.json is only seeded when missing — so when it already exists we must
+# merge the kit's plugin keys in. Idempotent: a no-op when seeding just copied
+# them. Kit values win on conflict; project-only entries are preserved.
+if python3 - "$SRC/.claude/settings.json" "$TARGET/.claude/settings.json" <<'PY'
+import json, sys
+src, tgt = json.load(open(sys.argv[1])), json.load(open(sys.argv[2]))
+changed = False
+for key in ("enabledPlugins", "extraKnownMarketplaces"):
+    if key not in src:
+        continue
+    merged = {**tgt.get(key, {}), **src[key]}
+    if merged != tgt.get(key):
+        tgt[key] = merged
+        changed = True
+if changed:
+    with open(sys.argv[2], "w") as f:
+        json.dump(tgt, f, indent=2)
+        f.write("\n")
+sys.exit(0 if changed else 9)
+PY
+then
+  echo "MERGE .claude/settings.json (plugin keys synced)"
+else
+  rc=$?
+  [[ "$rc" == "9" ]] \
+    && echo "OK    .claude/settings.json plugin keys already current" \
+    || echo "WARN  could not merge plugin keys (python3 missing?) — add enabledPlugins + extraKnownMarketplaces from the kit manually" >&2
+fi
+
 # CLAUDE.md is kit-owned — always overwrite so workflow/skill updates propagate.
 cp "$SRC/CLAUDE.md" "$TARGET/CLAUDE.md"
 echo "COPY  CLAUDE.md (kit-managed — do not edit; put project context in ProjectCLAUDE.md)"
@@ -84,5 +114,14 @@ for pattern in ".claude/settings.local.json" "CLAUDE.local.md"; do
     echo "GITIGNORE  added $pattern"
   fi
 done
+
+# Preflight: the bundled plugins ship MCP servers launched via `npx`, which
+# needs node on the PATH Claude Code inherits (a GUI launch may not see a
+# version-manager / Homebrew PATH). Warn early instead of a silent ENOENT.
+if ! command -v npx >/dev/null 2>&1; then
+  echo "WARN  npx not found — context7 plugin's MCP server will fail (ENOENT)." >&2
+  echo "      Install Node, then ensure node/npx are on Claude Code's PATH" >&2
+  echo "      (e.g. symlink into ~/.local/bin)." >&2
+fi
 
 echo "Done. Open the project and run /skills to verify everything loaded."
