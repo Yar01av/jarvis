@@ -286,7 +286,20 @@ Hand the running instance to the user and wait. Every issue the user finds
 re-enters the **implement → document → review** loop (phases 7 → 8 → 9) as
 one unit — code fix, docs brought current, fresh review — so docs and review
 never lag the code. No "trivial vs substantial" triage: every change makes
-the full loop. The user decides through their own testing when the loop is
+the full loop.
+
+**Diagnose before you implement when the cause isn't obvious.** The loop starts
+at "implement," which assumes you already know *what* to fix. When a user-found
+issue's cause is unclear — especially a non-deterministic, hard-to-reproduce, or
+"works here but not there" defect — do **not** start guessing fixes inline.
+Dispatch the **`debugger`** agent first: it root-causes in its own context
+(minimal repro, instrumentation, hypothesis-falsification) and returns the cause
++ a proposed fix, so the bisecting odyssey never floods the orchestrator's
+context. *Then* enter implement → document → review with the diagnosis in hand.
+(Same applies to a defect surfaced during the phase-10 smoke test.) Skip the
+debugger only when the fix is genuinely obvious from the report.
+
+The user decides through their own testing when the loop is
 done; don't nudge. Only when they're satisfied do you proceed to commit —
 with docs and review guaranteed current against the final code.
 
