@@ -85,7 +85,11 @@ Guardrails:
   skippable.** The tests → implementation → review spine (6+) is mandatory —
   refuse to skip past it; that's where correctness is enforced (this mirrors
   CE's own "skip ideation, never skip review"). Skipping straight to 4
-  (planner) is the common, supported case.
+  (planner) is the common, supported case. This holds **regardless of
+  deliverable shape**: a config / schema / workflow feature with no unit-test
+  suite still runs the full spine — "there are no tests here" is never a reason
+  to skip 6–9. See the *deliverable shape* note at phase 6 for how red / green /
+  run generalize beyond executable code.
 - **No fake sections.** Don't fabricate a Requirements or Research section for
   a skipped phase. When you skip to the planner (4), pass it the feature
   description directly and instruct it to surface any missing context as
@@ -174,11 +178,37 @@ wrong abstraction here is 10x cheaper than after red→green. Apply revisions
 
 ## 6. Tests red (`test-writer` agent)
 
+**First, classify the deliverable shape** — the spine (6→7, and the run in
+10→11) is written for *executable code with a test suite*, but not every
+feature has that shape. The spine is **mandatory for every shape** (per the
+phase-0 guardrail); only the *form* of red → green → run changes, and you carry
+the chosen shape through to phases 7/10/11. Name it in the design doc.
+
+- **Executable code** — red/green is a test suite: a failing assertion /
+  `NotImplementedError`, then passing. The STUB mechanism and the phase-7 sweep
+  below apply. This is the default; the rest of this phase is written for it.
+- **Declarative artifact** (config, IaC, schema, a workflow / pipeline
+  definition) — there is no code unit to assert against, but there is still an
+  observable red → green: exercise the artifact through its own toolchain
+  (validate → register / apply → run) and assert on the *result*. Here "the
+  planned test list" becomes the set of validation checks (the run's expected
+  outputs / rejections), and "fail for the right reason" becomes "the pre-change
+  run fails at validation." The STUB mechanism does **not** apply (no code
+  symbols to stub), so the phase-7 sweep is N/A for this shape.
+
+**Whichever shape: observe the red before you implement.** A spine that only
+ever saw green proved nothing — for a declarative artifact that means running
+the toolchain *before* the change and seeing the real failure (schema
+rejection, unresolved reference, missing expected output key), not assuming it.
+The concrete toolchain (how to validate / register / run) is project-specific —
+keep it in ProjectCLAUDE.md, not here.
+
 Delegate the planned test list: unit + integration tests against the
 *public* interfaces from the design doc. Tests must fail **for the right
 reason** (missing implementation, not typos/import errors). Require actual
 run output in the agent's report; spot-check it.
 
+*(Executable-code shape only — skip this paragraph for a declarative artifact.)*
 When a planned public symbol doesn't exist yet, instruct the test-writer to
 add a **minimal stub** for it (signature / dataclass shape only — a body that
 raises or returns nothing, never real logic) marked `# STUB(<feature-slug>):`
@@ -200,14 +230,18 @@ is green and every planned module is built. A wrong test comes back to you
 as a finding — never weakened silently. Architecture deviations get written
 back to the design doc; it must end truthful.
 
-**Before checking this box, sweep for leftover scaffolding:**
+**Before checking this box, if you used the STUB mechanism in phase 6
+(executable-code shape), sweep for leftover scaffolding:**
 `grep -rn 'STUB(<feature-slug>)' <source dirs, excluding docs/>`. Any hit
 means a stub was implemented but not cleaned, or a planned symbol was
 abandoned in place — resolve it (finish or delete) now. The reviewers
 receive the diff in phase 9 and treat a dangling stub on shipped code as a
 finding, so an unswept marker just becomes a review blocker. Use the exact
 slug token from phase 6 — one-character drift makes the grep silently match
-nothing, and a no-op gate reads as "covered" when it isn't.
+nothing, and a no-op gate reads as "covered" when it isn't. (For a declarative
+artifact no stubs were introduced, so there is nothing to sweep — don't run a
+grep that can only ever match nothing and mistake it for a passed gate; instead
+confirm the green run from phase 6's validation checks.)
 
 ## 8. Documentation
 
@@ -273,20 +307,31 @@ findings, so skipping this phase just converts it into review blockers.
 
 ## 10. Smoke test
 
-Start the software with the run command from ProjectCLAUDE.md (ask the user
-if there is none). Exercise it broadly — the new feature's main flow, the
-behavior adjacent to it, logs/console for anomalies. A general-purpose agent
-may do the poking; the app itself runs from the orchestrator (background
-Bash) so it survives into the next phase. Report what was tried and what was
-observed.
+Exercise the deliverable end to end (per the *deliverable shape* chosen at
+phase 6) and report what was tried and what was observed.
+
+- **Long-lived app** — start the software with the run command from
+  ProjectCLAUDE.md (ask the user if there is none). Exercise it broadly: the
+  new feature's main flow, adjacent behavior, logs/console for anomalies. A
+  general-purpose agent may do the poking; the app itself runs from the
+  orchestrator (background Bash) so it survives into the next phase.
+- **Run-to-completion artifact** (declarative workflow, batch job, one-shot
+  script) — there is no persistent process to keep alive; "smoke" is a full
+  end-to-end run through the real toolchain on representative input, checking
+  the produced output + logs for anomalies. This may already be the same run
+  that turned phase 6 green; if so, exercising a *broader* input here (more
+  cases, the adjacent path) is what makes it a smoke test rather than a repeat.
 
 ## 11. User testing (orchestrator, gate)
 
-Hand the running instance to the user and wait. Every issue the user finds
-re-enters the **implement → document → review** loop (phases 7 → 8 → 9) as
-one unit — code fix, docs brought current, fresh review — so docs and review
-never lag the code. No "trivial vs substantial" triage: every change makes
-the full loop.
+Hand the deliverable to the user and wait. For a long-lived app that's the
+running instance; for a run-to-completion artifact (per phase 6's shape) it's
+the run command + representative input so the user can exercise it themselves,
+plus the last run's outputs to inspect — there's no persistent instance to hand
+over. Every issue the user finds re-enters the **implement → document →
+review** loop (phases 7 → 8 → 9) as one unit — code fix, docs brought current,
+fresh review — so docs and review never lag the code. No "trivial vs
+substantial" triage: every change makes the full loop.
 
 **Diagnose before you implement when the cause isn't obvious.** The loop starts
 at "implement," which assumes you already know *what* to fix. When a user-found
