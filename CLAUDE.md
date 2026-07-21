@@ -11,6 +11,45 @@ Project-specific context lives in `ProjectCLAUDE.md`.
 - Bug fixes: reproduce first (`/fix`), then fix, then prove the repro passes.
 - Never commit unless explicitly asked; use `/commit` when asked.
 
+## Model tiering
+
+Cross-cutting policy for every skill that delegates work. Goal: spend the
+expensive model only where a wrong call is costly; let cheaper models do the
+mechanical work the plan already de-risked.
+
+Three-rung ladder: **`sonnet` (hands) → `opus` (mid) → `fable` (top)**.
+
+- **hands = `sonnet`** — mechanical work where the spec/plan already holds the
+  judgment (writing tests to a named list, implementing a specified module,
+  docs, commit). This is the default tier for delegated *execution*.
+- **brain = `opus`/`fable`** — judgment work where a wrong call is expensive
+  (research, architecture/planning, review, root-causing). Which of the two
+  depends on the run; a skill that exposes a `--brain` flag resolves it, else
+  default `opus`.
+- **Gates and orchestration run at the session model** (what `/model` is set
+  to). The orchestrator is itself a brain; it delegates the hands work.
+
+**Why hands-tier doesn't drop quality — three nets:**
+
+1. **The plan removes the judgment.** A brain produces a detailed enough plan
+   (module shapes, named tests as executable spec) that execution is mechanical.
+   Sonnet gets only the *basic* part; the hard thinking already happened.
+2. **Escalation.** A hands agent that returns **blocked — couldn't get its
+   assigned tests green**, **flags the spec/design as ambiguous**, or **hits
+   repeated tool failures** is a signal, not a verdict. Re-dispatch *that unit*
+   one rung up the ladder (sonnet → opus → fable). Escalation is per-unit and
+   bounded — step up, don't thrash.
+3. **Brain review.** Correctness-critical review runs at brain tier so a subtle
+   hands-tier slip gets caught before it ships — this is the **last** phase to
+   economize on. If a run's brain is forced all the way down to `sonnet`, that
+   third net is gone; flag it rather than pretend the guarantee still holds.
+
+**Mechanism:** the delegating orchestrator passes the resolved model as the
+Agent tool's `model` param (or, in a Workflow script, per `agent()` call). This
+overrides an agent's `model: inherit` frontmatter. **Agents stay
+model-agnostic** — the tier is the *caller's* call, made where the run's budget
+context lives, so the same agent serves a cheap run and an expensive one.
+
 ## Documentation
 
 Docs are the first source of truth for any task — every agent in this repo

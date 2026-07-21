@@ -1,7 +1,7 @@
 ---
 name: build-feature
 description: Full feature pipeline — research → go/no-go → grill → plan/experiment loop → TDD → docs → independent review → smoke test → user testing → commit → kit retrospective. The main session orchestrates; every work phase runs in a dedicated subagent.
-argument-hint: "<feature description, or existing feature slug to resume> [--from <phase 1-13 or name>]"
+argument-hint: "<feature description, or existing feature slug to resume> [--from <phase 1-13 or name>] [--brain <fable|opus|sonnet>]"
 disable-model-invocation: true
 ---
 
@@ -28,6 +28,54 @@ verdicts accumulate in the design doc's `## Experiments`.
 Hard rule for the whole pipeline: **never modify `.claude/` or the
 kit-managed `CLAUDE.md` in this project.** Improvement ideas for those are
 collected and presented to the user as suggestions only.
+
+## Model tiering (orchestrator)
+
+The base policy — the `sonnet` → `opus` → `fable` ladder, why hands-tier
+doesn't drop quality (plan removes judgment + escalation + brain review), and
+the `model`-param mechanism — lives in **CLAUDE.md → Model tiering**. This
+section adds only what's specific to this pipeline.
+
+- **hands (`sonnet`):** test-writer (6), implementer (7), librarian (8), smoke
+  poking (10), commit (12).
+- **brain:** researcher (1), planner (4), reviewers (9), kit-retrospective (13).
+- **gates run at the session model** (2 Go/no-go, 3 Requirements, 5 Plan
+  sign-off, 11 User testing); user controls that with `/model`.
+
+**This pipeline exposes a brain *ceiling* via `--brain`. Resolve in order:**
+1. `--brain <fable|opus|sonnet>` if passed → the run's brain ceiling (the model
+   for the hardest work).
+2. Otherwise default **`opus`**. (No kickoff question — opus is the safe default;
+   the user opts up to `fable` or down to `sonnet` when they know their budget.)
+3. **Mid-run override at any gate**, in plain language ("use fable for the
+   planner this round", "reviewers on sonnet"). Honor it for that dispatch and
+   note it in the design doc. This is the case-by-case lever — no new syntax,
+   the user is already stopped at the gate.
+
+**The ceiling is a ceiling, not a floor — spend it only where it pays.** When
+the ceiling is `fable`, brain phases split: the *hardest* (planner (4),
+reviewers (9)) run at `fable` = `brain-top`; the *sort-of-hard* (researcher (1),
+kit-retrospective (13)) drop one rung to `opus` = `brain-mid`. Announce the rung
+and recommend the drop; the user vetoes for full ceiling. At ceiling `opus`,
+top = mid = opus; at `sonnet`, the whole run is hands (escalation still applies).
+
+**Experimenter (phase 4) is decided per experiment.** Before dispatching, tell
+the user what each spike is and **recommend a tier** — hands for a small,
+self-contained spike; brain when the verdict will steer the architecture — then
+let them confirm or override.
+
+| Phase | Agent | Tier |
+|---|---|---|
+| 1 Research | researcher | brain-mid |
+| 4 Architecture | planner | brain-top |
+| 4 Experiments | experimenter | per-experiment (recommend, then confirm) |
+| 6 Tests red | test-writer | hands |
+| 7 Implementation | implementer | hands |
+| 8 Docs | librarian | hands |
+| 9 Review | code-reviewer + maintainability-reviewer | brain-top |
+| 10 Smoke | general-purpose | hands |
+| 12 Commit | /commit | hands |
+| 13 Retrospective | kit-retrospective | brain-mid |
 
 ## 0. Setup (orchestrator)
 
@@ -229,6 +277,35 @@ named but the implementation routed around). Loop until the full suite
 is green and every planned module is built. A wrong test comes back to you
 as a finding — never weakened silently. Architecture deviations get written
 back to the design doc; it must end truthful.
+
+Implementers run at **hands (`sonnet`)** — safe here because the plan and the
+red tests already hold the judgment (CLAUDE.md → Model tiering). **Escalation:**
+an implementer that returns blocked — can't get its tests green, flags the
+design doc as ambiguous, or hits repeated tool failures — is re-dispatched for
+*that module* one rung up the ladder. Step up, don't thrash; a module that
+fails twice above hands is a plan problem — kick it back to the plan gate.
+
+**Multi-module fan-out (opt-in Workflow mode).** When the plan has several
+modules, you may offer a Workflow-driven implementation instead of dispatching
+them by hand: you (the brain) author a script that runs one `implementer` per
+module **in sequence** (`for (const m of modules) await agent(prompt, {model:
+'sonnet'})`), each with an exact, pre-written prompt, so the hand-off is
+*deterministic* rather than improvised — that determinism is the win, not tokens
+or speed (see CLAUDE.md → Model tiering).
+
+**Sequential, not parallel — deliberately.** Implementers mutate the shared
+working tree and run the suite to confirm green; concurrent modules would race
+(half-written files, one agent's "green" invalidated by another's edit,
+conflicts on shared `__init__`/import/registry files) — and "independent"
+modules routinely still touch those shared files. Real parallelism would need
+`isolation: worktree` plus a merge-back step this pipeline doesn't specify;
+don't reach for it. Bake the escalation rule into the loop (a blocked
+implementer re-runs one rung up). **Recommend the workflow only when modules are
+many; skip it for one or two — and never run it without the user's OK** (a
+workflow can spawn many agents). Un-annotated `agent()` calls inherit the
+*session* model, so set `model: 'sonnet'` on every implementer explicitly or the
+hands saving evaporates. Tests-still-green and the STUB sweep below apply
+identically.
 
 **Before checking this box, if you used the STUB mechanism in phase 6
 (executable-code shape), sweep for leftover scaffolding:**

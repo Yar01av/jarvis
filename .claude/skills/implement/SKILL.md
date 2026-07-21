@@ -26,9 +26,20 @@ Work through these phases in order. Do not skip ahead to writing code.
 
 ## 3. Build
 
+Explore, plan, and verify are the judgment; the build is mechanical. **Delegate
+the build to a `sonnet` `implementer` subagent** (hands tier — CLAUDE.md → Model
+tiering) once the plan is concrete, and stay in the loop to review its diff
+rather than type it yourself. Skip the hop for a trivial one-file change — build
+it inline. Whether delegated or inline, hold these constraints (pass them to the
+implementer):
+
 - Implement in the planned order, smallest verifiable increment first.
 - Match surrounding code style exactly: naming, error handling, comment density.
 - No drive-by refactors — note them, don't do them.
+
+**Escalation:** an implementer that returns blocked — can't satisfy the plan,
+the plan is ambiguous, or repeated tool failures — gets that unit re-dispatched
+one rung up the ladder, not a shaky result accepted (CLAUDE.md → Model tiering).
 
 ## 4. Verify
 
