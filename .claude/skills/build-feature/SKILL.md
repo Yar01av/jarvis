@@ -16,6 +16,16 @@ have agents write the doc themselves: isolated/parallel agents would race or
 (in worktrees) silently lose the write. After each phase, check off its box
 in the design doc's phase checklist, which is also the resume mechanism.
 
+**A subagent's file edits are not atomic.** When a subagent returns `failed` or
+terminates early (spend/usage limit, API error, crash, context exhaustion), treat
+any files it was editing as possibly left in an incoherent, half-done state.
+Before building on its work, inspect `git diff` and restore a coherent tree —
+revert to the last-good state or finish the edit yourself. **A green test suite is
+not proof of tree coherence:** a partial edit can pass the whole suite yet be
+broken (a re-parented-but-ungridded widget, a half-applied refactor, colliding
+layout, or anything the tests don't cover). This applies to every delegated phase,
+not one.
+
 **Experimentation is a floating capability, not a fixed phase.** Whenever
 any phase surfaces a falsifiable uncertainty — research claims an unproven
 library fit, the go/no-go hinges on an unverified capability, the plan
