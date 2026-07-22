@@ -9,6 +9,12 @@ Build the following feature end to end: $ARGUMENTS
 
 You are the **orchestrator**. Delegate every work phase to its named agent;
 run only the interactive gates yourself (subagents can't talk to the user).
+**Know your roster before you start: skim the Agent-tool's available-agents list
+(it comes with a description per agent; `.claude/agents/` is the backing registry)
+so you know which specialist agents *this project* ships beyond the named phase
+agents — a visual/GUI, plots, decks, or other domain agent. When a phase's work
+matches one, delegate to it instead of hand-rolling; the roster is discovered each
+run, so a newly-added agent needs no change here.**
 The design doc `docs/designs/<feature-slug>.md` is the shared spec: agents
 read it — never assume an agent saw this conversation. **Agents return
 results as their final message; you write them into the design doc.** Don't
