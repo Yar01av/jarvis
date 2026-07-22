@@ -35,19 +35,22 @@ Expect multiple back-and-forth cycles across the pipeline; phase 4 is just
 where the loop is most common, not the only place it's allowed. All
 verdicts accumulate in the design doc's `## Experiments`.
 
-**Visual/UI work is delegable too — use a visual agent if the project has one,
-don't assume it does.** When a feature is visual (a desktop GUI, a rendered
-layout, a styling change), the design-exploration and visual-QC loop — render the
-thing, *look* at it, iterate against a reference — is not orchestrator work to
-hand-roll inline (throwaway screenshot scripts, reading PNGs, cropping). **If the
-project provides a visual agent** (e.g. a `gui-visual` agent, the way plots go to
-`plot-builder` and decks to `deck-builder` where those exist), delegate it there
-with an *encapsulated spec* (target file/app + visual reference/palette + which
-screen/state + what to check) since it can't see this conversation; it returns
-rendered PNGs + a critique + a verdict. **If there is no such agent, don't invent
-elaborate tooling** — capture at least one rendered view yourself and inspect it
-(never silently skip the *look*). Applies wherever the visual question arises — the
-mock loop around phases 2–4 and the visual QC in phases 10–11.
+**Visual/UI work is delegable too — discover a specialist agent, don't assume or
+hardcode one.** When a feature is visual (a desktop GUI, a rendered layout, a
+styling change) — or needs another specialist artefact (plots, decks, diagrams) —
+the design/QC loop (render the thing, *look* at it, iterate against a reference) is
+not orchestrator work to hand-roll inline (throwaway screenshot scripts, reading
+PNGs, cropping). **Check the project's available agents** — the Agent tool lists
+them with descriptions, and `.claude/agents/` is the registry — and if one's
+description fits the work, delegate to it with an *encapsulated spec* (target +
+reference/palette + which screen/state + what to check) since it can't see this
+conversation; it returns the artefacts + a critique + a verdict. **If none fits,
+don't assume one exists** — capture at least one rendered view yourself and inspect
+it (never silently skip the *look*), without building elaborate throwaway tooling.
+The list is **discovered, not enumerated here** — adding a specialist agent makes it
+available automatically, with nothing in this skill to update. Applies wherever the
+visual question arises — the mock loop around phases 2–4 and the visual QC in phases
+10–11.
 
 Hard rule for the whole pipeline: **never modify `.claude/` or the
 kit-managed `CLAUDE.md` in this project.** Improvement ideas for those are
@@ -425,9 +428,10 @@ phase 6) and report what was tried and what was observed.
 
 For a **visual/UI** feature the smoke also includes *looking at the rendered
 result*, not just exercising flows — a "tests pass / widget tree is right" check
-is blind to layout, alignment, and styling defects. If the project has a visual
-agent (e.g. `gui-visual`), delegate that render-and-look QC to it with an
-encapsulated spec; if not, capture at least one rendered view yourself and inspect it.
+is blind to layout, alignment, and styling defects. If the project's available
+agents include a matching visual-QC agent (check the Agent tool's list /
+`.claude/agents/`), delegate that render-and-look QC to it; if not, capture at
+least one rendered view yourself and inspect it.
 
 ## 11. User testing (orchestrator, gate)
 
