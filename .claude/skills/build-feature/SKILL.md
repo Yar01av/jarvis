@@ -54,9 +54,34 @@ conversation; it returns the artefacts + a critique + a verdict. **If none fits,
 don't assume one exists** — capture at least one rendered view yourself and inspect
 it (never silently skip the *look*), without building elaborate throwaway tooling.
 The list is **discovered, not enumerated here** — adding a specialist agent makes it
-available automatically, with nothing in this skill to update. Applies wherever the
-visual question arises — the mock loop around phases 2–4 and the visual QC in phases
-10–11.
+available automatically, with nothing in this skill to update. This delegation is
+about the visual QC in phases 10–11 (rendering and looking); concretizing an
+interface's shape *before* implementation is the general capability below — it
+isn't specific to visual work and isn't restricted to this paragraph.
+
+**Concretizing an interface's shape is a floating capability too, not a UI-specific
+one.** Whenever a decision settles the *shape* of something a human or another
+system will directly perceive or consume — a UI control, a CLI command's output,
+an API request/response, a config schema, a file or data format — prose is a poor
+medium to confirm it in: it silently encodes assumptions (singular vs. plural,
+defaults, nesting, ordering) that only surface once someone sees a real instance.
+"A dropdown plus a token field" reads as complete and unambiguous prose while
+quietly assuming exactly one of the thing being configured — the kind of gap that
+surfaces only once the control exists and someone asks "what about two?" Whenever
+such a decision arises — most often at phase 3 (the grill) or phase 4 (the plan) —
+produce the smallest concrete instantiation that fits the medium before treating
+the decision as settled: a rendered mock or ASCII sketch for a UI, an example
+request/response for an API, a sample invocation + output for a CLI, an example
+file for a config/data format. Confirm the instantiation itself (an
+`AskUserQuestion` `preview`, or a throwaway render checked with a specialist agent
+per the paragraph above) rather than a prose description alone — cheapest done
+inline, without a full build/QC cycle. Not every decision needs this — only ones
+where the concrete shape is genuinely load-bearing (a stakeholder will directly
+see or use it) and prose plausibly hides a wrong cardinality/default/ordering
+assumption; a return type of "a boolean" needs no mock. This is the same principle
+phase 10's visual QC already applies *after* implementation (render it, look at
+it) — pulling one cheap instantiation forward catches a wrong shape before any
+code exists, not after a costly rebuild.
 
 Hard rule for the whole pipeline: **never modify `.claude/` or the
 kit-managed `CLAUDE.md` in this project.** Improvement ideas for those are
@@ -220,7 +245,11 @@ build.
 Invoke `/grill-me`, seeded with the research section and its *decisions for
 the human* (the empirical uncertainties are not grill material — they wait
 for the experimenter). Distill the interview into `## Requirements`: scope,
-acceptance criteria, edge cases, non-goals.
+acceptance criteria, edge cases, non-goals. **When the grill settles the shape
+of an interface** (a UI control, an API/CLI contract, a config/data format —
+see the concretizing capability above), settle it against a concrete
+instantiation, not prose alone; an `AskUserQuestion` `preview` is usually the
+cheapest way to do this inline.
 
 ## 4. Architecture ↔ experimentation loop
 
@@ -254,7 +283,11 @@ acceptance criteria, edge cases, non-goals.
 ## 5. Plan sign-off (orchestrator, gate)
 
 The user reviews the architecture before any tests are written. Catching a
-wrong abstraction here is 10x cheaper than after red→green. Apply revisions
+wrong abstraction here is 10x cheaper than after red→green. **If the plan
+introduces or changes an interface a stakeholder will directly perceive**
+(a UI control, an API/CLI contract, a file/data format), the sign-off
+artifact includes its concrete instantiation, not just the module/data
+diagram — see the concretizing capability at the top. Apply revisions
 (re-entering the loop above if they're structural) until signed off.
 
 ## 6. Tests red (`test-writer` agent)
@@ -445,10 +478,15 @@ Hand the deliverable to the user and wait. For a long-lived app that's the
 running instance; for a run-to-completion artifact (per phase 6's shape) it's
 the run command + representative input so the user can exercise it themselves,
 plus the last run's outputs to inspect — there's no persistent instance to hand
-over. Every issue the user finds re-enters the **implement → document →
-review** loop (phases 7 → 8 → 9) as one unit — code fix, docs brought current,
-fresh review — so docs and review never lag the code. No "trivial vs
-substantial" triage: every change makes the full loop.
+over. Every issue the user finds gets fixed **immediately** (phase 7) so
+testing isn't blocked on documentation/review — but the **document → review**
+close-out (phases 8 → 9) doesn't have to fire after each individual fix. It
+**batches** across however many fixes accumulated since the last hand-back,
+and runs once **before every point where you hand the deliverable back to the
+user** for another look, and once more before phase 12. No "trivial vs
+substantial" triage on *whether* a fix gets docs + review — only on *when*
+the batch closes. What must never happen is reaching a hand-back, or phase 12,
+with code the last `librarian`/reviewer pass never saw.
 
 **Diagnose before you implement when the cause isn't obvious.** The loop starts
 at "implement," which assumes you already know *what* to fix. When a user-found
@@ -462,10 +500,21 @@ context. *Then* enter implement → document → review with the diagnosis in ha
 debugger only when the fix is genuinely obvious from the report.
 
 The user decides through their own testing when the loop is
-done; don't nudge. Only when they're satisfied do you proceed to commit —
-with docs and review guaranteed current against the final code.
+done; don't nudge. Once they're satisfied, phase 12's precondition is what
+actually guarantees docs and review are current against the final code —
+not a promise made here.
 
 ## 12. Commit (orchestrator)
+
+**Precondition — the batch-boundary checkpoint:** before `/commit`, confirm
+a `librarian` pass and a fresh reviewer pair have seen the tree exactly as it
+now stands. Check the order of your own dispatches: if any code-changing
+agent (`implementer`, `gui-visual`, or equivalent) ran *after* the last
+`librarian`/`code-reviewer`/`maintainability-reviewer` dispatch, phase 8 → 9
+hasn't actually closed on the current code — run them now, on the
+accumulated diff since that last pass, before proceeding. This is the one
+hard checkpoint that catches a phase-11 loop that batched fixes without ever
+looping back — skipping it is how stale docs or an unreviewed change ships.
 
 On user approval, invoke `/commit` on the feature branch: implementation,
 tests, docs, and the design doc. Merging/PR is the user's call — say so and
