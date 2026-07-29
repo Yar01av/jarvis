@@ -18,6 +18,9 @@
       "Bash(git push --force*)"
     ]
   },
+  "worktree": {
+    "baseRef": "head"
+  },
   "hooks": {
     "SessionStart": [
       {

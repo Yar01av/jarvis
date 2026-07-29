@@ -9,7 +9,8 @@
 #   --link  : symlink <target>/.claude/skills + agents back to this repo
 #             (single source of truth; machine-local only — don't commit symlinks)
 #
-# CLAUDE.md.template is copied to <target>/CLAUDE.md only if none exists.
+# CLAUDE.md is kit-managed and always overwritten on install; ProjectCLAUDE.md
+# is seeded from ProjectCLAUDE.md.template only if missing.
 
 set -euo pipefail
 
@@ -64,18 +65,22 @@ cp "$SRC/.claude/statusline.sh" "$TARGET/.claude/statusline.sh"
 chmod +x "$TARGET/.claude/statusline.sh"
 echo "COPY  .claude/statusline.sh (kit-managed usage tracker)"
 
-# Plugin keys (enabledPlugins / extraKnownMarketplaces) are kit-managed, but
-# settings.json is only seeded when missing — so when it already exists we must
-# merge the kit's plugin keys in. Idempotent: a no-op when seeding just copied
-# them. Kit values win on conflict; project-only entries are preserved.
+# Some settings keys are kit-managed, but settings.json is only seeded when
+# missing — so when it already exists we must merge the kit's keys in.
+# Idempotent: a no-op when seeding just copied them. Plugin keys: kit wins on
+# conflict. worktree: project wins (a deliberate baseRef choice survives);
+# only missing entries are filled in.
 if python3 - "$SRC/.claude/settings.json" "$TARGET/.claude/settings.json" <<'PY'
 import json, sys
 src, tgt = json.load(open(sys.argv[1])), json.load(open(sys.argv[2]))
 changed = False
-for key in ("enabledPlugins", "extraKnownMarketplaces"):
+for key, kit_wins in (("enabledPlugins", True), ("extraKnownMarketplaces", True), ("worktree", False)):
     if key not in src:
         continue
-    merged = {**tgt.get(key, {}), **src[key]}
+    if kit_wins:
+        merged = {**tgt.get(key, {}), **src[key]}
+    else:
+        merged = {**src[key], **tgt.get(key, {})}
     if merged != tgt.get(key):
         tgt[key] = merged
         changed = True
@@ -86,12 +91,12 @@ if changed:
 sys.exit(0 if changed else 9)
 PY
 then
-  echo "MERGE .claude/settings.json (plugin keys synced)"
+  echo "MERGE .claude/settings.json (kit-managed keys synced)"
 else
   rc=$?
   [[ "$rc" == "9" ]] \
-    && echo "OK    .claude/settings.json plugin keys already current" \
-    || echo "WARN  could not merge plugin keys (python3 missing?) — add enabledPlugins + extraKnownMarketplaces from the kit manually" >&2
+    && echo "OK    .claude/settings.json kit-managed keys already current" \
+    || echo "WARN  could not merge settings keys (python3 missing?) — add enabledPlugins + extraKnownMarketplaces + worktree from the kit manually" >&2
 fi
 
 # CLAUDE.md is kit-owned — always overwrite so workflow/skill updates propagate.
@@ -107,8 +112,10 @@ else
 fi
 
 # Make sure local-only files stay out of the target's git history.
+# .claude/worktrees/ holds worktree-isolated subagent checkouts (experiment
+# spikes) — never content to commit.
 GI="$TARGET/.gitignore"
-for pattern in ".claude/settings.local.json" "CLAUDE.local.md"; do
+for pattern in ".claude/settings.local.json" "CLAUDE.local.md" ".claude/worktrees/"; do
   if [[ ! -f "$GI" ]] || ! grep -qxF "$pattern" "$GI"; then
     echo "$pattern" >> "$GI"
     echo "GITIGNORE  added $pattern"

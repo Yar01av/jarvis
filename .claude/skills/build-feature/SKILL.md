@@ -21,6 +21,9 @@ results as their final message; you write them into the design doc.** Don't
 have agents write the doc themselves: isolated/parallel agents would race or
 (in worktrees) silently lose the write. After each phase, check off its box
 in the design doc's phase checklist, which is also the resume mechanism.
+The doc's authority is scoped: it is the source of truth for *decisions and
+progress*; git and the working tree are the source of truth for *code state*
+— never infer tree coherence from the doc (see the atomicity caveat below).
 
 **A subagent's file edits are not atomic.** When a subagent returns `failed` or
 terminates early (spend/usage limit, API error, crash, context exhaustion), treat
@@ -32,6 +35,25 @@ broken (a re-parented-but-ungridded widget, a half-applied refactor, colliding
 layout, or anything the tests don't cover). This applies to every delegated phase,
 not one.
 
+**Checkpoint commits give that recovery a ref to stand on.** At phase 0, ask
+once: *"this run makes `wip(<slug>)` checkpoint commits on the feature branch,
+reconciled at phase 12 — OK?"* On consent, commit `wip(<slug>): <what>` after
+seeding the design doc, after phase 6 (tests red), after each phase-7 module
+goes green, and after each batch close-out (phases 9/11 and the pre-12 full
+close-out) — logging each SHA as an event in the close-out ledger. Stage
+explicitly (`git add <paths>`), never `git add -A`: concurrent spike worktrees
+and stray files must not ride along. The atomicity recovery above then becomes
+concrete: `git diff <last-checkpoint>`, restore from it. Reconciliation is the
+**orchestrator's** job at phase 12, not `/commit`'s (that skill neither
+squashes nor amends — see phase 12 for the mechanism); squash-or-keep is the
+user's call there. A run that ends before phase 12 (`--to`, a review halt, an
+abandon) leaves the chain live — say so and offer to reconcile on the spot.
+After any early reconcile, set the ledger header's `base` to the new HEAD: a
+later phase-12 squash must never rewind past an already-reconciled commit.
+If the user declines checkpoints, run without them; the delta-review and
+recovery steps below fall back to dirty-diff mechanics (weaker — say so when
+it bites).
+
 **Experimentation is a floating capability, not a fixed phase.** Whenever
 any phase surfaces a falsifiable uncertainty — research claims an unproven
 library fit, the go/no-go hinges on an unverified capability, the plan
@@ -39,7 +61,17 @@ rests on an assumption — dispatch `experimenter` agents *then and there*
 and loop back to the phase that raised the question with the verdicts.
 Expect multiple back-and-forth cycles across the pipeline; phase 4 is just
 where the loop is most common, not the only place it's allowed. All
-verdicts accumulate in the design doc's `## Experiments`.
+verdicts accumulate in the design doc's `## Experiments`. One tree caveat for
+every worktree-isolated spike: a worktree sees only **committed** state,
+whatever it branches from. The kit's baseline settings.json pins
+`worktree.baseRef: "head"` (branch from the session's HEAD) — **confirm the
+pin exists in this project's settings** (a pre-existing install won't have it
+until `install.sh` re-runs) or the spike silently branches from the default
+branch instead. Either way, a spike whose verdict depends on uncommitted work must
+get the relevant diff inlined in its prompt, run after a checkpoint commit
+(see Checkpoints above), or run non-isolated with the orchestrator aware it
+may touch the tree. A verdict tested against the wrong tree is worse
+than no verdict — it steers the architecture with false confidence.
 
 **Visual/UI work is delegable too — discover a specialist agent, don't assume or
 hardcode one.** When a feature is visual (a desktop GUI, a rendered layout, a
@@ -117,7 +149,7 @@ kit-retrospective (13)) drop one rung to `opus` = `brain-mid`. Announce the rung
 and recommend the drop; the user vetoes for full ceiling. At ceiling `opus`,
 top = mid = opus; at `sonnet`, the whole run is hands (escalation still applies).
 
-**Experimenter (phase 4) is decided per experiment.** Before dispatching, tell
+**Experimenter (phases 3–4) is decided per experiment.** Before dispatching, tell
 the user what each spike is and **recommend a tier** — hands for a small,
 self-contained spike; brain when the verdict will steer the architecture — then
 let them confirm or override.
@@ -126,7 +158,7 @@ let them confirm or override.
 |---|---|---|
 | 1 Research | researcher | brain-mid |
 | 4 Architecture | planner | brain-top |
-| 4 Experiments | experimenter | per-experiment (recommend, then confirm) |
+| 3–4 Experiments | experimenter | per-experiment (recommend, then confirm) |
 | 6 Tests red | test-writer | hands |
 | 7 Implementation | implementer | hands |
 | 8 Docs | librarian | hands |
@@ -138,11 +170,18 @@ let them confirm or override.
 ## 0. Setup (orchestrator)
 
 - Derive a short `<feature-slug>` from the arguments.
-- If `docs/designs/<feature-slug>.md` exists: make sure you're on
+- If `docs/designs/<feature-slug>.md` exists **in the working tree or on
+  `feature/<slug>`** — a consented-checkpoint run commits the doc there and
+  leaves the tree clean, so from `main` it's invisible; check
+  `git show feature/<slug>:docs/designs/<feature-slug>.md` before concluding
+  the run is fresh: make sure you're on
   `feature/<slug>` first (`git checkout`; recreate the branch if it's gone),
-  then read the checklist. Tell the user where you're picking up. A fresh
-  session typically starts on main — resuming without the checkout writes
-  feature code to the wrong branch.
+  then read the checklist **and the state sections** (`## Experiments`, open
+  unknowns, `## User testing`, the close-out ledger including its
+  checkpoint-consent header) — the boxes alone don't carry loop counters,
+  checkpoint consent, or deferred close-out work. Tell the user where you're
+  picking up. A fresh session typically starts on main — resuming without the
+  checkout writes feature code to the wrong branch.
 - Otherwise: warn if the working tree is dirty, create branch
   `feature/<slug>`, and seed the design doc with this checklist (applying
   `--from`, below, before you start work):
@@ -165,7 +204,23 @@ let them confirm or override.
   - [ ] 11 User testing
   - [ ] 12 Committed
   - [ ] 13 Kit retrospective
+
+  ## Close-out ledger
+  <!-- Header: `Checkpoints: yes|no · base: <git rev-parse HEAD at phase 0>`.
+       Then an append-only event log, one line each, in order:
+       - checkpoint: <SHA> — <what>
+       - code-change: <which agent / what>  (any dispatch that edits code)
+       - close-out: <agents> — scope full|delta — checkpoint <SHA|none>
+         — deferred: <what>
+       Phase 12 reads THIS, not your memory of dispatch order. -->
   ```
+
+- **Fresh runs only:** record the run base (`git rev-parse HEAD`) in the
+  ledger header, ask the checkpoint-consent question (see Checkpoints in the
+  preamble), and record the answer there too; on consent, make the first
+  `wip(<slug>): seed design doc` commit now. A resumed run **reads** the
+  recorded answer instead of re-asking — ask only if the header is absent,
+  and on that resume-ask create the header then, with base := current HEAD.
 
 - **Then (both branches), begin work at the first `[ ]` phase in the
   checklist.** This is the single control rule that routes every run — fresh,
@@ -213,7 +268,9 @@ for a slice (`--from 4 --to 5`). On reaching the target, check its box, tell
 the user where you stopped and how to resume (`/build-feature <slug>` picks up
 at the next unchecked phase), and stop — do not run later phases. `--to` may
 land before the test/impl spine (a plan-only run is fine); it just defers the
-spine to a later resume, it never skips it.
+spine to a later resume, it never skips it. A stopped run with a consented
+checkpoint chain leaves it live and un-reconciled — say so and offer to
+reconcile now.
 
 ## 1. Research (`researcher` agent)
 
@@ -226,7 +283,12 @@ dead-end. The agent
 returns findings with sources, a build / buy / drop recommendation, and open
 questions split into *decisions for the human* (feed the grill) and
 *empirical uncertainties* (track these — they must not get lost between
-phases). Spike uncertainties **now** when the build/buy/drop call or the
+phases). Require each empirical uncertainty to come back as a **directly
+dispatchable one-question brief**: the question, the smallest spike that
+yields a verdict, and enough self-contained context to run without this
+conversation — phase 3 dispatches the grill-independent ones verbatim into
+background spikes, so a brief that needs follow-up questions wastes the slot.
+Spike uncertainties **now** when the build/buy/drop call or the
 upcoming grill would benefit from the answer (research ↔ experiment is a
 loop, per the floating-experimentation rule); the rest carry forward to
 planning. Write the result into the design doc under `## Research`.
@@ -242,9 +304,23 @@ build.
 
 ## 3. Requirements (orchestrator, interactive)
 
+**First, use the grill's dead time: dispatch the independent spikes now.**
+The interview is usually the longest wall-clock stretch of the run, and every
+agent is idle during it. Partition phase 1's empirical uncertainties: those
+that are **independent of grill outcomes and self-contained** (their brief
+needs nothing the interview could change) get dispatched *before* the first
+question — present the spike list with a per-experiment tier recommendation
+("while I grill you, these spike in the background — OK?"), then launch one
+`experimenter` per uncertainty, background, `isolation: worktree` (mind the
+committed-state caveat above). Verdicts land while the interview runs; write
+each into `## Experiments` as it arrives. Uncertainties the grill might
+reshape stay undispatched — a spike against requirements that are about to
+move is the one waste case, and the user confirming the list bounds it.
+
 Invoke `/grill-me`, seeded with the research section and its *decisions for
 the human* (the empirical uncertainties are not grill material — they wait
-for the experimenter). Distill the interview into `## Requirements`: scope,
+for the experimenter or are already spiking in the background). Distill
+the interview into `## Requirements`: scope,
 acceptance criteria, edge cases, non-goals. **When the grill settles the shape
 of an interface** (a UI control, an API/CLI contract, a config/data format —
 see the concretizing capability above), settle it against a concrete
@@ -259,10 +335,13 @@ cheapest way to do this inline.
   marking, data flow, Mermaid diagrams (component + sequence where
   meaningful), a named test list (unit + integration), and **Open
   unknowns** — claims the plan rests on that need empirical verification.
-  Pass the research phase's *empirical uncertainties* into this prompt and
-  require a disposition for each: resolved with cited evidence, needs a
-  user decision (→ plan gate), or open unknown (→ experiment). None may
-  silently disappear.
+  Pass the research phase's *empirical uncertainties* **and the verdicts
+  already landed in `## Experiments`** (the phase-3 background spikes) into
+  this prompt and require a disposition for each: resolved with cited
+  evidence, needs a user decision (→ plan gate), or open unknown
+  (→ experiment). None may silently disappear. With the grill-time spikes
+  in, the first plan often starts with its biggest unknowns already
+  answered instead of opening the loop cold.
 - **Skepticism check**: a first-cycle plan with zero open unknowns on a
   non-trivial feature is a smell, not a green light — especially when
   research flagged uncertainties. Challenge it once ("which of these claims
@@ -288,7 +367,9 @@ introduces or changes an interface a stakeholder will directly perceive**
 (a UI control, an API/CLI contract, a file/data format), the sign-off
 artifact includes its concrete instantiation, not just the module/data
 diagram — see the concretizing capability at the top. Apply revisions
-(re-entering the loop above if they're structural) until signed off.
+(re-entering the loop above if they're structural) until signed off. Record
+the sign-off and the revisions applied in the design doc — one or two lines,
+decision-grade, never a transcript.
 
 ## 6. Tests red (`test-writer` agent)
 
@@ -320,7 +401,9 @@ keep it in ProjectCLAUDE.md, not here.
 Delegate the planned test list: unit + integration tests against the
 *public* interfaces from the design doc. Tests must fail **for the right
 reason** (missing implementation, not typos/import errors). Require actual
-run output in the agent's report; spot-check it.
+run output in the agent's report; spot-check it. With checkpoint consent,
+commit `wip(<slug>): tests red` once the red is observed and log the SHA in
+the ledger.
 
 *(Executable-code shape only — skip this paragraph for a declarative artifact.)*
 When a planned public symbol doesn't exist yet, instruct the test-writer to
@@ -335,14 +418,18 @@ started implementing. These markers are the contract the phase-7 sweep clears.
 ## 7. Implementation red→green (`implementer` agent, per module)
 
 Delegate module by module in the planned order, each agent getting the
-design doc plus which tests it must turn green. In the delegation prompt,
+design doc plus which tests it must turn green — logging a `code-change`
+ledger event per dispatch (the phase-12 ship gate reads these). In the delegation prompt,
 tell the implementer to **remove each `# STUB(<feature-slug>):` marker as it
 fills that symbol in**, and to **delete — not leave defined — any planned
 symbol it diverges from and no longer uses** (a dataclass/function the doc
 named but the implementation routed around). Loop until the full suite
 is green and every planned module is built. A wrong test comes back to you
 as a finding — never weakened silently. Architecture deviations get written
-back to the design doc; it must end truthful.
+back to the design doc; it must end truthful. With checkpoint consent, commit
+`wip(<slug>): <module> green` after each module lands and log each SHA in the
+ledger — those per-module SHAs are what the atomicity recovery and the later
+delta reviews diff against.
 
 Implementers run at **hands (`sonnet`)** — safe here because the plan and the
 red tests already hold the judgment (CLAUDE.md → Model tiering). **Escalation:**
@@ -397,7 +484,8 @@ you, because only you hold the context to write it:
    feature-level docs this project keeps to match existing conventions. The
    librarian reads the code directly, so it needs none of this conversation —
    but it also can't write what isn't in the code. Write its returned report
-   into the design doc and act on its flags.
+   into the design doc, act on its flags, and append the close-out ledger
+   line for this librarian pass.
 2. **Finalize the design doc (orchestrator).** Decisions taken, deviations
    from the plan — this is conversation-derived rationale the librarian
    doesn't have, and the design doc is your resume state, so you own it. If
@@ -441,8 +529,23 @@ findings, so skipping this phase just converts it into review blockers.
   work, not the intentions.
 - **Show the user each review summary** (verbatim findings, not your gloss).
 - Fix blockers and should-fixes with phase 6–7 discipline (tests stay
-  green), then re-review. **Max 2 fix rounds**; if the third review still
-  has blockers, stop and hand the open findings to the user.
+  green) — logging a `code-change` ledger event per fix dispatch — then
+  re-review. **Max 2 fix rounds**; if the third review still
+  has blockers, stop and hand the open findings to the user — and if a
+  consented checkpoint chain is live, say so and offer to reconcile it now.
+  Annotate the round on the checklist box (`- [ ] 9 Review passed (fix
+  round 1/2)`) — the annotation, not the box state, carries the count (on a
+  phase-11 re-entry the box is already `[x]`); it lives in the design doc,
+  not your memory, and **resets per batch**.
+- After each completed pass, append a close-out ledger event: which agents
+  ran, **scope `full` or `delta`**, on which checkpoint SHA (or none), what
+  was deferred — then, with checkpoint consent, commit the batch-close
+  checkpoint and log its SHA (that `checkpoint:` line lands *after* the
+  `close-out:` event; later delta reviews diff from that following line —
+  the event's own checkpoint field records the ref the review diffed from).
+  <!-- Two callers use this section: the full close-out (here and before
+       phase 12) and phase 11's scoped delta caller — keep their scopes
+       distinct in the ledger; phase 12 discriminates on that field. -->
 - Prompt/instruction improvement ideas from reviewers (e.g. "this LLM
   artifact keeps appearing — instruction X would prevent it") are collected
   under `## Kit suggestions` in your report to the user. Suggestions only —
@@ -451,7 +554,9 @@ findings, so skipping this phase just converts it into review blockers.
 ## 10. Smoke test
 
 Exercise the deliverable end to end (per the *deliverable shape* chosen at
-phase 6) and report what was tried and what was observed.
+phase 6) and report what was tried and what was observed. Land the condensed
+result in the design doc — what was exercised, what was observed, a few
+lines, never logs.
 
 - **Long-lived app** — start the software with the run command from
   ProjectCLAUDE.md (ask the user if there is none). Exercise it broadly: the
@@ -479,14 +584,33 @@ running instance; for a run-to-completion artifact (per phase 6's shape) it's
 the run command + representative input so the user can exercise it themselves,
 plus the last run's outputs to inspect — there's no persistent instance to hand
 over. Every issue the user finds gets fixed **immediately** (phase 7) so
-testing isn't blocked on documentation/review — but the **document → review**
-close-out (phases 8 → 9) doesn't have to fire after each individual fix. It
-**batches** across however many fixes accumulated since the last hand-back,
-and runs once **before every point where you hand the deliverable back to the
-user** for another look, and once more before phase 12. No "trivial vs
-substantial" triage on *whether* a fix gets docs + review — only on *when*
-the batch closes. What must never happen is reaching a hand-back, or phase 12,
-with code the last `librarian`/reviewer pass never saw.
+testing isn't blocked on documentation/review. The close-out is **two-speed,
+deliberately** — every fix still gets reviewed, but only the ship gate pays
+for the full pass:
+
+- **Interim hand-backs get a scoped delta review**: one `code-reviewer` at
+  **brain-top** (this is most interim batches' only review — never a tier to
+  economize on), on the diff since the last reviewed checkpoint (dirty-diff
+  mechanics if checkpoints were declined), its prompt carrying the prior
+  round's findings
+  to check the fixes against, and told explicitly that **doc staleness is
+  known-deferred and not a finding this round** — without that line it
+  re-reports the same stale-docs blocker every batch, by charter. No
+  `librarian`, no `maintainability-reviewer` yet.
+- **The full close-out — `librarian` + both reviewers — runs once, before
+  phase 12** (the ship gate there enforces it). Deferral has a limit: force
+  the full close-out — all three agents, librarian included — early when the
+  accumulated delta stops being local: it adds a public symbol, touches more
+  than one module, or spans three or more hand-backs.
+
+Track the loop's state in the design doc, not your head: keep a short
+`## User testing` list (issues found / fixed / last batch closed), log a
+`code-change` ledger event per fix dispatch and a `close-out` event (scope
+`delta`) per delta review, and — with checkpoint consent — commit the
+batch-close checkpoint each time. Those events are what the phase-12 ship
+gate reads. What must never happen is
+reaching phase 12 with code no reviewer ever saw, or with the full pass
+older than the last code change.
 
 **Diagnose before you implement when the cause isn't obvious.** The loop starts
 at "implement," which assumes you already know *what* to fix. When a user-found
@@ -495,7 +619,8 @@ issue's cause is unclear — especially a non-deterministic, hard-to-reproduce, 
 Dispatch the **`debugger`** agent first: it root-causes in its own context
 (minimal repro, instrumentation, hypothesis-falsification) and returns the cause
 + a proposed fix, so the bisecting odyssey never floods the orchestrator's
-context. *Then* enter implement → document → review with the diagnosis in hand.
+context. *Then* enter implement → delta review (per the two-speed close-out
+above) with the diagnosis in hand.
 (Same applies to a defect surfaced during the phase-10 smoke test.) Skip the
 debugger only when the fix is genuinely obvious from the report.
 
@@ -506,19 +631,33 @@ not a promise made here.
 
 ## 12. Commit (orchestrator)
 
-**Precondition — the batch-boundary checkpoint:** before `/commit`, confirm
-a `librarian` pass and a fresh reviewer pair have seen the tree exactly as it
-now stands. Check the order of your own dispatches: if any code-changing
-agent (`implementer`, `gui-visual`, or equivalent) ran *after* the last
-`librarian`/`code-reviewer`/`maintainability-reviewer` dispatch, phase 8 → 9
-hasn't actually closed on the current code — run them now, on the
-accumulated diff since that last pass, before proceeding. This is the one
-hard checkpoint that catches a phase-11 loop that batched fixes without ever
-looping back — skipping it is how stale docs or an unreviewed change ships.
+**Precondition — the ship gate:** before committing, each of `librarian`,
+`code-reviewer`, and `maintainability-reviewer` must **individually** have
+seen the tree exactly as it now stands — conjunctive, per agent, never "some
+reviewer ran recently". Read the **close-out ledger**, not your memory of
+dispatch order: for each of the three, its last **`full`-scope** close-out
+event must postdate the last `code-change` event. A `delta` entry never
+satisfies this gate — it saw a slice, was told to ignore doc staleness, and
+ran before the final librarian pass. Run whatever is missing now, in this
+order: **`librarian` first, then both reviewers on the post-librarian tree**,
+each on the accumulated diff since its last full pass. The phase-11 delta
+reviews deliberately deferred these passes; this is where the deferral is
+collected. **If the ledger is missing or the ordering can't be established
+from it (compaction, resumed session): don't guess — re-run all three on the
+current tree.** One redundant close-out pass is the known cost of a crash; a
+silently skipped ship gate is not. This is the one hard gate that catches a
+phase-11 loop that batched fixes without ever looping back — skipping it is
+how stale docs or an unreviewed change ships.
 
-On user approval, invoke `/commit` on the feature branch: implementation,
-tests, docs, and the design doc. Merging/PR is the user's call — say so and
-stop.
+On user approval, close out the git state, then commit. With a consented
+checkpoint chain the tree is already clean, so `/commit` alone would be a
+no-op — reconciliation is yours, not `/commit`'s: ask squash-or-keep. On
+**squash**, `git reset --soft <run base>` (the ledger header records the
+base), which turns the whole feature into staged changes, then invoke
+`/commit` as normal. On **keep**, the wip chain stands and `/commit` handles
+any remaining uncommitted work (docs, design doc). Without checkpoints,
+invoke `/commit` on the dirty tree as before: implementation, tests, docs,
+and the design doc. Merging/PR is the user's call — say so and stop.
 
 ## 13. Kit retrospective (`kit-retrospective` agent)
 
