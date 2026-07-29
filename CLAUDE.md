@@ -9,7 +9,11 @@ Project-specific context lives in `ProjectCLAUDE.md`.
 - Before non-trivial changes: plan first (use the `planner` agent or `/implement`).
 - After changes: run lint + the relevant tests before declaring done.
 - Bug fixes: reproduce first (`/fix`), then fix, then prove the repro passes.
-- Never commit unless explicitly asked; use `/commit` when asked.
+- Never commit unless explicitly asked; use `/commit` when asked. One
+  exception: `wip(<slug>)` checkpoint commits inside a user-approved
+  `/build-feature` run (consented at its phase 0) — they stay on the feature
+  branch, and the orchestrator reconciles them at phase 12 (squash-or-keep,
+  the user's call) before `/commit` runs.
 
 ## Model tiering
 
@@ -61,6 +65,10 @@ clear, curated picture instead of a raw grep dump.
   links down the hierarchy into the per-directory indexes for the areas
   you'll touch, and collect what you need there. Re-traverse as often as the
   work requires — multiple passes, multiple branches.
+- **If `docs/INDEX.md` doesn't exist, there is no tree to traverse** — skip
+  the traversal entirely and go straight to the fallback; don't burn lookups
+  rediscovering the absence. Note "docs tree missing" once in your output
+  instead.
 - **Grep / free exploration is the fallback, not the opener.** Only after
   you've traversed the relevant index paths and *still* lack the answer, or
   you spot a contradiction between the docs and the code, are you free to
@@ -74,7 +82,9 @@ clear, curated picture instead of a raw grep dump.
   something the team may have hit before. `/build-feature` writes it (phase 8)
   and reads it (phase 1); `/refresh-solutions` curates it.
 - Keep it honest: run `/sync-docs` after changes that alter structure or
-  behavior. If `docs/` doesn't exist yet, run `/sync-docs` once to bootstrap.
+  behavior. If the project keeps a `docs/` tree that was never bootstrapped,
+  run `/sync-docs` once to bootstrap it — but some repos deliberately keep
+  none (see `ProjectCLAUDE.md`); don't create the tree against that choice.
 
 ## Available skills
 
@@ -82,8 +92,12 @@ Run `/skills` to see all loaded skills. Key ones this kit ships:
 
 - `/build-feature` — full feature pipeline: research → grill → plan/experiment → TDD → review → smoke test
 - `/implement` — explore → plan → build → verify
-- `/fix` — repro-first bug fixing
+- `/fix` — repro-first bug fixing with fail-on-revert proof and docs close-out
 - `/commit` — scoped commit with hygiene checks
 - `/sync-docs` — update `docs/` after structural changes
 - `/refresh-solutions` — curate the `docs/solutions/` lessons store (prune stale, merge dupes, fix index)
 - `/handoff` — write a session handoff doc
+- `/grill-me` — stress-test a plan via relentless one-question-at-a-time interview
+- `/explain-skill` — explain another skill's source in depth
+- `/write-a-skill` — author a new skill properly
+- `/caveman` — ultra-terse response mode

@@ -12,8 +12,9 @@ jarvis/
 ├── ProjectCLAUDE.md.template  # Project-specific template → becomes ProjectCLAUDE.md in the target repo
 ├── install.sh              # Deploys this kit into a target project
 └── .claude/
-    ├── settings.json       # Baseline permissions + status line (safe defaults, stack-agnostic)
+    ├── settings.json       # Baseline permissions + status line + worktree base (safe defaults)
     ├── statusline.sh       # Usage tracker rendered in the status bar
+    ├── hooks/              # Session hooks wired up via settings.json
     ├── agents/             # Subagents (delegated via the Agent tool)
     │   ├── code-reviewer.md
     │   ├── maintainability-reviewer.md
@@ -23,14 +24,17 @@ jarvis/
     │   ├── implementer.md
     │   ├── test-writer.md
     │   ├── debugger.md
+    │   ├── kit-retrospective.md  # mines a finished build-feature run for kit improvements
     │   └── librarian.md    # owns code-derived docs (codebase map + feature docs)
     └── skills/             # Slash commands (/implement, /fix, /commit, ...)
         ├── build-feature/  # full pipeline: research → grill → plan/experiment → TDD → review → smoke test
         ├── implement/      # explore → plan → build → verify workflow
-        ├── fix/            # repro-first bug fixing
+        ├── fix/            # repro-first bug fixing + fail-on-revert proof
         ├── commit/         # scoped commits + hygiene checks
         ├── handoff/        # session handoff doc + CLAUDE.md update
         ├── sync-docs/      # hierarchically indexed codebase docs in docs/
+        ├── refresh-solutions/ # curate the docs/solutions/ lessons store
+        ├── explain-skill/  # meta: explain another skill's source in depth
         ├── grill-me/       # stress-test a plan via relentless interview †
         ├── caveman/        # ultra-terse response mode †
         └── write-a-skill/  # meta: author new skills properly †
@@ -85,6 +89,11 @@ Notes:
   seeded on **first** install. Fresh installs get the `statusLine` block
   automatically; existing projects keep their own `settings.json`, so add the
   block (see `.claude/settings.json` here) manually to opt in.
+- The `worktree.baseRef: "head"` key (worktree-isolated agents branch from
+  the session's HEAD instead of the default branch — `/build-feature`'s
+  experiment spikes rely on it) is **merged into existing settings on every
+  install**, unlike `statusLine`; a project's own `worktree` values win.
+  Manual add is only needed when the merge step warned (no `python3`).
 - The command uses `${CLAUDE_PROJECT_DIR}` so it resolves regardless of which
   subdirectory you're in. If the bar is blank or shows `statusline skipped`,
   the only hard dependency is `jq` on `PATH` (the script degrades gracefully if
