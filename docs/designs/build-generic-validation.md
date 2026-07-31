@@ -176,6 +176,59 @@ Re-run the same four-agent test after fixing: three contract derivations (code /
 composite) plus one adversarial read, each given only `SKILL.md`. That harness found every
 defect above and cost four Fable dispatches.
 
+## Round 2 — fixes applied and re-validated (2026-07-31, follow-up session)
+
+R1–R9 all applied to `SKILL.md` (738 → ~800 lines; preamble bloat cuts funded ~15 of
+the growth). The same four-agent harness re-ran on the fixed file: three Fable
+derivations (FastAPI middleware / QBR deck / the composite Dutch PDF) + one Fable
+adversarial read, each restricted to `SKILL.md`.
+
+**Core verdicts — the R-fixes held.** Composite: *"no path was found by which a node
+closes with nobody reviewing it"*; child reds open correctly (pytest at 6,
+authored-first inside 7); build script reviewed at 7 (module) *and* 9 (assembled
+seams), rationale cited. Plain code: tree collapses to one node; *"the contract adds
+one classification decision and a few lines."* Deck: deck-shaped scheme, root read at
+9 + code reviewers on the diff; only honest residue (the worked example's gravity
+toward including an executable child). R1–R5 held under maximally literal reads;
+R6–R9 consumed as intended.
+
+**Round-2 findings, fixed in the same pass:**
+
+- Root review 7-vs-9 double-run ambiguity (3/4) → explicit root exception in phase
+  7's assembly step + single-node degenerate-case note.
+- long-lived/run-to-completion tag scoped to executable tops but consumed for every
+  top (4/4, incl. the example violating its own spec) → tag required on every top
+  node whatever its medium; changes inside an existing app tag the ship vehicle.
+- No builder/assembly fallback for non-executable nodes (3/4) → `general-purpose` at
+  hands; "a missing specialist changes the builder, never removes a loop step."
+- Review-step fallback missing ("reviewer agent" maps to no registry identity — the
+  one residual displacement path found) → `general-purpose` at brain-top with the
+  node's rubric.
+- Mixed-tree phase-6 box literally omits rubric confirmations (2/4) → box = all reds
+  observed AND all confirmations recorded.
+- The one-question test misclassifies pre-existence greps (fails, but for the wrong
+  reason) → "and fail for the right reason" wired into the question.
+- checked-by tool-vs-agent + green-step owner (2/4) → field def names tool + operating
+  agent; green bullet names who re-runs (builder for executables, else checked-by).
+- Nested-review findings had no protocol (1/4) → blockers worked off before "closed";
+  node checkpoint moved from green to close (green *and* reviewed), preamble aligned.
+- Phase-9 first-pass diff base undefined (1/4) → run base first pass, last reviewed
+  checkpoint on re-reviews.
+- Preamble's absolute "checked by is a delegation" vs the example's orchestrator grep
+  (2/4; was parked) → inline-mechanical exception scoped, render-and-look excluded.
+
+Not fixed by design: "does the tree contain a script node at all" is a plan judgment
+the phase-5 gate owns (the tie-breaker sentence covers it); unit-vs-integration
+split pressure resolved by the same tie-breaker.
+
+**Agreed next steps (user-approved direction, deferred until after this lands):**
+per-project artifact shapes via a `## Artifact shapes` section in `ProjectCLAUDE.md`
+(one line per medium, optional pointer to a style/template doc; skill carries only
+the lookup rule at phase 4); live tree display via harness tasks (one task per
+contract node at phase 5, DFS order, indented subjects, `blockedBy` = child-before-
+parent; statuses flipped at loop transitions), Workflow-orchestrated phase 7 as the
+later upgrade path for a genuinely drawn tree UI and safe parallel siblings.
+
 ## Parked — found in the same read, out of scope here
 
 Pre-existing drift unrelated to this feature, recorded so it isn't lost: the `plan` token
@@ -185,4 +238,38 @@ the model-tiering bullets duplicate the table and one bullet predates the contra
 three small ledger/checkpoint gaps (phase-6 test-writer dispatches log no `code-change`, phase
 8's librarian close-out has no scope, the promised pre-12 checkpoint is never instructed); and
 the bold *"a node's checked by is a delegation, not orchestrator work"* contradicts the
-flagship example's *"checked by: orchestrator (grep)"*.
+flagship example's *"checked by: orchestrator (grep)"* (this last one fixed in round 2).
+
+### Round-2 additions (adversarial read; pre-existing machinery, untouched this branch)
+
+Ship gate / ledger — **F1, F2, F3, F11 fixed in round 3 (same session)**: phase 8 now
+writes the exact typed event (`close-out: librarian — scope full — …`); phase 12
+closes out its ship-gate runs with events + the pre-12 checkpoint and names the
+legitimate librarian re-open after fix rounds as the gate working; the "tree is
+already clean" claim replaced with "either path may carry late uncommitted edits";
+the checkpoint-field semantics (diffed-FROM ref, never the batch-close SHA) moved
+into the phase-0 seed comment, with phase 9 now pointing at it instead of restating.
+A targeted Fable probe then audited the full write/read lifecycle (write table, read
+table, simulated run with a fix round + two hand-backs): **mainline coherent — every
+reader has a writer, the phase-12 gate decidable for all three agents, no orphan
+preamble promise**. Its residue, fixed in the same pass: `code-change` widened to
+doc-editing dispatches (librarian logs one; the design doc itself exempt), closing a
+gate-escape where a gate-filling librarian's doc edits shipped reviewer-unseen;
+`scope` defined in the seed comment as the pass's charter, never its diff size
+(phase-9 re-reviews stay `full`); the librarian's checkpoint field = the ref it ran
+on; phase 7 no longer claims delta reviews diff from per-node SHAs; the
+ledger-missing fallback now records its re-runs and recreates the ledger section;
+phase 11 logs the batch-close SHA line its own next delta depends on.
+Tiering: `debugger`, ship-gate re-runs, floating experiments (phases 1–2), phase-10
+render-and-look, and phase-11's delta reviewer are untiered or only tiered in phase
+bodies; the `/commit` "hands" row is unimplementable via a Skill call (F4, F5).
+Protocol drift: three incompatible fix disciplines across 7/9/11, with the debugger
+path dropping red entirely (F7); phase-11's checklist audit unticks boxes with no
+re-entry rule (F9); "batch" and the fix-round cap's reach in phase 11 undefined
+(F12). Flags/interface: `--from` on a resume slug undefined (F14); smoke outputs
+consumed at 11 but preserved nowhere (F17); sonnet-ceiling flag duty not restated at
+the ceiling paragraph (F18); phase-10 poking optional vs delegate-everything (F19);
+resume branch recreation names no source ref (F20); phase 12 is interactive but
+absent from the gates list (F22). Bloat re-confirmed and extended: tier bullets vs
+table, roster ×2, concretizing ×3, reconcile-offer ×3, never-modify ×3, escalation
+×3, displaced-review anecdote ×2, ~7-pages ×2, ship-gate reminders ×3.
