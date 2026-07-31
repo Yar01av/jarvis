@@ -1,11 +1,11 @@
 ---
-name: build-feature
-description: Full feature pipeline — research → go/no-go → grill → plan/experiment loop → TDD → docs → independent review → smoke test → user testing → commit → kit retrospective. The main session orchestrates; every work phase runs in a dedicated subagent.
-argument-hint: "<feature description, or existing feature slug to resume> [--from <phase 1-13 or name>] [--brain <fable|opus|sonnet>]"
+name: build
+description: Full delivery pipeline for any deliverable — research → go/no-go → grill → plan/experiment loop → validation-first build (TDD for code, the same discipline for every other medium) → docs → independent review → smoke test → user testing → commit → kit retrospective. The main session orchestrates; every work phase runs in a dedicated subagent. For a contained change that needs no signed-off plan, independent review or durable record, use `/implement` instead.
+argument-hint: "<deliverable description, or existing slug to resume> [--from <phase 1-13 or name>] [--brain <fable|opus|sonnet>]"
 disable-model-invocation: true
 ---
 
-Build the following feature end to end: $ARGUMENTS
+Build the following deliverable end to end: $ARGUMENTS
 
 You are the **orchestrator**. Delegate every work phase to its named agent;
 run only the interactive gates yourself (subagents can't talk to the user).
@@ -38,8 +38,8 @@ not one.
 **Checkpoint commits give that recovery a ref to stand on.** At phase 0, ask
 once: *"this run makes `wip(<slug>)` checkpoint commits on the feature branch,
 reconciled at phase 12 — OK?"* On consent, commit `wip(<slug>): <what>` after
-seeding the design doc, after phase 6 (tests red), after each phase-7 module
-goes green, and after each batch close-out (phases 9/11 and the pre-12 full
+seeding the design doc, after phase 6 (validation red), after each phase-7
+node goes green, and after each batch close-out (phases 9/11 and the pre-12 full
 close-out) — logging each SHA as an event in the close-out ledger. Stage
 explicitly (`git add <paths>`), never `git add -A`: concurrent spike worktrees
 and stray files must not ride along. The atomicity recovery above then becomes
@@ -73,23 +73,16 @@ get the relevant diff inlined in its prompt, run after a checkpoint commit
 may touch the tree. A verdict tested against the wrong tree is worse
 than no verdict — it steers the architecture with false confidence.
 
-**Visual/UI work is delegable too — discover a specialist agent, don't assume or
-hardcode one.** When a feature is visual (a desktop GUI, a rendered layout, a
-styling change) — or needs another specialist artefact (plots, decks, diagrams) —
-the design/QC loop (render the thing, *look* at it, iterate against a reference) is
-not orchestrator work to hand-roll inline (throwaway screenshot scripts, reading
-PNGs, cropping). **Check the project's available agents** — the Agent tool lists
-them with descriptions, and `.claude/agents/` is the registry — and if one's
-description fits the work, delegate to it with an *encapsulated spec* (target +
-reference/palette + which screen/state + what to check) since it can't see this
-conversation; it returns the artefacts + a critique + a verdict. **If none fits,
-don't assume one exists** — capture at least one rendered view yourself and inspect
-it (never silently skip the *look*), without building elaborate throwaway tooling.
-The list is **discovered, not enumerated here** — adding a specialist agent makes it
-available automatically, with nothing in this skill to update. This delegation is
-about the visual QC in phases 10–11 (rendering and looking); concretizing an
-interface's shape *before* implementation is the general capability below — it
-isn't specific to visual work and isn't restricted to this paragraph.
+**A node's *checked by* is a delegation, not orchestrator work.** Rendering a
+thing and *looking* at it — a GUI, a layout, a deck, a plot, a diagram — is not
+hand-rolled inline with throwaway screenshot scripts. **Check the project's
+available agents** (the Agent tool lists them with descriptions; `.claude/agents/`
+is the registry) and delegate to whichever fits, with an *encapsulated spec*
+(target + reference/palette + which screen/state + what to check) since it can't
+see this conversation; it returns artefacts + a critique + a verdict. **If none
+fits, don't assume one exists** — capture at least one rendered view yourself and
+inspect it, never silently skipping the *look*. The roster is **discovered, not
+enumerated here**, so a newly-added agent needs no change to this file.
 
 **Concretizing an interface's shape is a floating capability too, not a UI-specific
 one.** Whenever a decision settles the *shape* of something a human or another
@@ -159,8 +152,8 @@ let them confirm or override.
 | 1 Research | researcher | brain-mid |
 | 4 Architecture | planner | brain-top |
 | 3–4 Experiments | experimenter | per-experiment (recommend, then confirm) |
-| 6 Tests red | test-writer | hands |
-| 7 Implementation | implementer | hands |
+| 6 Validation red | per node's *checked by* (default test-writer) | hands |
+| 7 Build green | implementer | hands |
 | 8 Docs | librarian | hands |
 | 9 Review | code-reviewer + maintainability-reviewer | brain-top |
 | 10 Smoke | general-purpose | hands |
@@ -194,10 +187,10 @@ let them confirm or override.
   - [ ] 1 Research
   - [ ] 2 Go/no-go
   - [ ] 3 Requirements (grill)
-  - [ ] 4 Architecture (incl. experiments)
+  - [ ] 4 Architecture (incl. experiments + validation contract)
   - [ ] 5 Plan sign-off
-  - [ ] 6 Tests red
-  - [ ] 7 Implementation green
+  - [ ] 6 Validation red
+  - [ ] 7 Build green
   - [ ] 8 Documentation
   - [ ] 9 Review passed
   - [ ] 10 Smoke test
@@ -243,19 +236,18 @@ truthful.
 Guardrails:
 
 - **Only the front phases (1-3: Research, Go/no-go, Requirements) are freely
-  skippable.** The tests → implementation → review spine (6+) is mandatory —
-  refuse to skip past it; that's where correctness is enforced (this mirrors
-  CE's own "skip ideation, never skip review"). Skipping straight to 4
-  (planner) is the common, supported case. This holds **regardless of
-  deliverable shape**: a config / schema / workflow feature with no unit-test
-  suite still runs the full spine — "there are no tests here" is never a reason
-  to skip 6–9. See the *deliverable shape* note at phase 6 for how red / green /
-  run generalize beyond executable code.
+  skippable.** The validate → build → review spine (6+) is mandatory — refuse
+  to skip past it; that's where correctness is enforced (this mirrors CE's
+  own "skip ideation, never skip review"). Skipping straight to 4 (planner)
+  is the common, supported case. This holds **whatever the deliverable is**:
+  a config, schema, workflow, or document with no test suite still runs the
+  full spine — "there are no tests here" is never a reason to skip 6–9; the
+  phase-4 validation contract defines what red / green / run mean for it.
 - **No fake sections.** Don't fabricate a Requirements or Research section for
   a skipped phase. When you skip to the planner (4), pass it the feature
   description directly and instruct it to surface any missing context as
   **Open unknowns**. The phase 5 plan-gate is the safety net — the user catches
-  a wrong abstraction there before any test is written.
+  a wrong abstraction there before any red is built.
 - If a downstream phase turns out to genuinely need a skipped phase's output,
   say so and offer to run that phase now rather than guessing.
 
@@ -265,9 +257,9 @@ Guardrails:
 instead of continuing to commit/retrospective — e.g. `--to 5` for a plan-only
 run (architecture + sign-off, no code), or `--to plan`. Combine with `--from`
 for a slice (`--from 4 --to 5`). On reaching the target, check its box, tell
-the user where you stopped and how to resume (`/build-feature <slug>` picks up
+the user where you stopped and how to resume (`/build <slug>` picks up
 at the next unchecked phase), and stop — do not run later phases. `--to` may
-land before the test/impl spine (a plan-only run is fine); it just defers the
+land before the validate/build spine (a plan-only run is fine); it just defers the
 spine to a later resume, it never skips it. A stopped run with a consented
 checkpoint chain leaves it live and un-reconciled — say so and offer to
 reconcile now.
@@ -333,8 +325,9 @@ cheapest way to do this inline.
   architecture-doc format — this *overrides the planner's default plan
   shape*: modules/classes and methods with explicit public vs internal
   marking, data flow, Mermaid diagrams (component + sequence where
-  meaningful), a named test list (unit + integration), and **Open
-  unknowns** — claims the plan rests on that need empirical verification.
+  meaningful), the deliverable tree with its per-node **validation
+  contract** (below), and **Open unknowns** — claims the plan rests on
+  that need empirical verification.
   Pass the research phase's *empirical uncertainties* **and the verdicts
   already landed in `## Experiments`** (the phase-3 background spikes) into
   this prompt and require a disposition for each: resolved with cited
@@ -359,10 +352,64 @@ cheapest way to do this inline.
 - Exit when the plan has no blocking unknowns. Write the final architecture
   into `## Architecture`.
 
+### The validation contract (planner output — phase 5 gates it)
+
+The plan states not only what gets built but how each part will be **proven**
+— TDD's discipline shed of its literal form. The loop, not the phase, is
+the unit of work — every node runs its own, nested where the tree nests:
+
+```
+loop(node):
+  red    — observe this node's stated failure, for real
+  build  — a leaf: implement it.
+           a parent: run loop(child) for each child, then assemble from them.
+  green  — run this node's own check until it passes
+  review — this node's medium-appropriate review
+```
+
+Phases 6/7/9 are the **root** invocation; the contract tree marks the nested
+ones, each closing — green *and* reviewed — before its parent assembles. The
+contract is authored here, before the gate, because an over-heavy scheme
+originates in the plan's mandated shape (a 25-test plan for a 20-page PDF
+traced to a format clause demanding a test list; by phase 6, the gate that
+could have struck it had already passed). Nested markdown bullets — a tree
+the human signs and an agent reads; resist YAML and schemas. Three fields
+per node: **medium** (what it is in validation terms: executable, rendered
+pages, a live UI, a registered workflow, content, data), **red** (the
+observable failure to see *before* building — concrete, never "tests fail"),
+**checked by** (which agent or human runs it). The tree lands in the design
+doc as `## Deliverables`:
+
+```markdown
+## Deliverables
+- Dutch PDF manual — medium: rendered pages
+  - red: an agent reads the pages against the spec and reports defects
+  - checked by: reviewer agent, batched ~7 pages
+  - built from:
+    - build_pdf.py — medium: executable
+      - red: pytest over the parsers, observed failing first
+      - checked by: test-writer, then code-reviewer
+    - handleiding.html + assets — medium: content
+      - red: every UI label the doc quotes exists verbatim in gui.py
+      - checked by: orchestrator (grep), then the page review above
+```
+
+**Split a node only when a sub-part's validation medium differs from its
+parent's** — a PDF (rendered pages) built by a script (executable) splits;
+two Python modules don't (same medium, one contract); without this rule the
+tree refuses to decompose or decomposes forever. The per-node review step is
+why **a parent's check never discharges a child's**: in the run that forced
+this rule, the rendered PDF's visual review *displaced* the code review, so
+the build script was reviewed by nobody and shipped a bug (every internal
+link double-annotated) that a rendered page cannot show **by construction**.
+
 ## 5. Plan sign-off (orchestrator, gate)
 
-The user reviews the architecture before any tests are written. Catching a
-wrong abstraction here is 10x cheaper than after red→green. **If the plan
+The user reviews the architecture before any red is built. Catching a
+wrong abstraction here is 10x cheaper than after red→green. **The validation
+contract is a gate artifact in its own right**: present the deliverable tree
+with its per-node checks verbatim, not summarized — the user resizes or
+strikes checks here, while a wrong-sized scheme still costs nothing. **If the plan
 introduces or changes an interface a stakeholder will directly perceive**
 (a UI control, an API/CLI contract, a file/data format), the sign-off
 artifact includes its concrete instantiation, not just the module/data
@@ -371,71 +418,65 @@ diagram — see the concretizing capability at the top. Apply revisions
 the sign-off and the revisions applied in the design doc — one or two lines,
 decision-grade, never a transcript.
 
-## 6. Tests red (`test-writer` agent)
+## 6. Validation red (per the phase-4 contract)
 
-**First, classify the deliverable shape** — the spine (6→7, and the run in
-10→11) is written for *executable code with a test suite*, but not every
-feature has that shape. The spine is **mandatory for every shape** (per the
-phase-0 guardrail); only the *form* of red → green → run changes, and you carry
-the chosen shape through to phases 7/10/11. Name it in the design doc.
+The contract — authored at 4, signed at 5 — already says what red means for
+every node; this phase runs the **root** loop's red step (nested reds open
+inside phase 7, when their loops do). Dispatch each red to its node's
+*checked by* agent and require actual observed output in the report —
+spot-check it; a red asserted rather than observed proves nothing. Two kinds:
 
-- **Executable code** — red/green is a test suite: a failing assertion /
-  `NotImplementedError`, then passing. The STUB mechanism and the phase-7 sweep
-  below apply. This is the default; the rest of this phase is written for it.
-- **Declarative artifact** (config, IaC, schema, a workflow / pipeline
-  definition) — there is no code unit to assert against, but there is still an
-  observable red → green: exercise the artifact through its own toolchain
-  (validate → register / apply → run) and assert on the *result*. Here "the
-  planned test list" becomes the set of validation checks (the run's expected
-  outputs / rejections), and "fail for the right reason" becomes "the pre-change
-  run fails at validation." The STUB mechanism does **not** apply (no code
-  symbols to stub), so the phase-7 sweep is N/A for this shape.
+- **Observable-first red** (leaves, typically executable): the failure exists
+  before the artifact — literal TDD. Tests fail **for the right reason**
+  (missing implementation, not typos/import errors); a toolchain-validated
+  artifact's pre-change run fails for real (schema rejection, unresolved
+  reference, missing output key — the concrete toolchain is project-specific;
+  it lives in ProjectCLAUDE.md, not here).
+- **Authored-first red** (composite parents, rendered/assembled media): the
+  check *cannot* run before the thing exists, so the rubric — authored at 4,
+  agreed at 5 — runs against the **first assembly**, and that first run's
+  findings *are* the red. Not a deferral, not an exemption: fixed before
+  assembly, run at the earliest possible moment, never saved for the end. The
+  motivating PDF's red was the first page review's findings — callout badges
+  sitting on the controls they pointed at, which no assertion could catch.
 
-**Whichever shape: observe the red before you implement.** A spine that only
-ever saw green proved nothing — for a declarative artifact that means running
-the toolchain *before* the change and seeing the real failure (schema
-rejection, unresolved reference, missing expected output key), not assuming it.
-The concrete toolchain (how to validate / register / run) is project-specific —
-keep it in ProjectCLAUDE.md, not here.
+With checkpoint consent, commit `wip(<slug>): validation red` once this
+phase's reds are observed and log the SHA in the ledger.
 
-Delegate the planned test list: unit + integration tests against the
-*public* interfaces from the design doc. Tests must fail **for the right
-reason** (missing implementation, not typos/import errors). Require actual
-run output in the agent's report; spot-check it. With checkpoint consent,
-commit `wip(<slug>): tests red` once the red is observed and log the SHA in
-the ledger.
-
-*(Executable-code shape only — skip this paragraph for a declarative artifact.)*
-When a planned public symbol doesn't exist yet, instruct the test-writer to
-add a **minimal stub** for it (signature / dataclass shape only — a body that
-raises or returns nothing, never real logic) marked `# STUB(<feature-slug>):`
-so the red is an assertion / `NotImplementedError` failure rather than an
+*(Executable nodes only — skip this paragraph otherwise.)* When a planned
+public symbol doesn't exist yet, instruct the test-writer to add a **minimal
+stub** for it (signature / dataclass shape only — a body that raises or
+returns nothing, never real logic) marked `# STUB(<feature-slug>):` so the
+red is an assertion / `NotImplementedError` failure rather than an
 import-/collection-time error. Two guards: the stub must still leave the test
 **failing** (a stub that accidentally satisfies a test makes the red fake),
 and it stays minimal — the moment a stub grows logic, the test-writer has
 started implementing. These markers are the contract the phase-7 sweep clears.
 
-## 7. Implementation red→green (`implementer` agent, per module)
+## 7. Build green (per node, bottom-up)
 
-Delegate module by module in the planned order, each agent getting the
-design doc plus which tests it must turn green — logging a `code-change`
-ledger event per dispatch (the phase-12 ship gate reads these). In the delegation prompt,
-tell the implementer to **remove each `# STUB(<feature-slug>):` marker as it
-fills that symbol in**, and to **delete — not leave defined — any planned
-symbol it diverges from and no longer uses** (a dataclass/function the doc
-named but the implementation routed around). Loop until the full suite
-is green and every planned module is built. A wrong test comes back to you
-as a finding — never weakened silently. Architecture deviations get written
-back to the design doc; it must end truthful. With checkpoint consent, commit
-`wip(<slug>): <module> green` after each module lands and log each SHA in the
-ledger — those per-module SHAs are what the atomicity recovery and the later
-delta reviews diff against.
+Build is the loop's recursive step: a **leaf** you implement; a **parent**
+you build by running `loop(child)` for each child — closed, green *and*
+reviewed — then assembling from them. Dispatch `implementer` for executable
+nodes, the roster specialist that fits for other media (per the preamble) —
+each getting the design doc plus which checks it must turn green, logging a
+`code-change` ledger event per dispatch (the phase-12 ship gate reads
+these). In the delegation prompt, tell the implementer to **remove each
+`# STUB(<feature-slug>):` marker as it fills that symbol in**, and to
+**delete — not leave defined — any planned symbol it diverges from and no
+longer uses** (a dataclass/function the doc named but the implementation
+routed around). A wrong check comes back to you as a finding — never
+weakened silently; every planned node ends built. Architecture deviations
+get written back to the design doc; it must end truthful. With checkpoint
+consent, commit `wip(<slug>): <node> green` after each node lands and log
+each SHA in the ledger — those per-node SHAs are what the atomicity
+recovery and the later delta reviews diff against.
 
 Implementers run at **hands (`sonnet`)** — safe here because the plan and the
-red tests already hold the judgment (CLAUDE.md → Model tiering). **Escalation:**
-an implementer that returns blocked — can't get its tests green, flags the
+observed reds already hold the judgment (CLAUDE.md → Model tiering). **Escalation:**
+an implementer that returns blocked — can't get its checks green, flags the
 design doc as ambiguous, or hits repeated tool failures — is re-dispatched for
-*that module* one rung up the ladder. Step up, don't thrash; a module that
+*that node* one rung up the ladder. Step up, don't thrash; a node that
 fails twice above hands is a plan problem — kick it back to the plan gate.
 
 **Multi-module fan-out (opt-in Workflow mode).** When the plan has several
@@ -460,18 +501,18 @@ workflow can spawn many agents). Un-annotated `agent()` calls inherit the
 hands saving evaporates. Tests-still-green and the STUB sweep below apply
 identically.
 
-**Before checking this box, if you used the STUB mechanism in phase 6
-(executable-code shape), sweep for leftover scaffolding:**
+**Before checking this box, if any executable node used the phase-6 STUB
+mechanism, sweep for leftover scaffolding:**
 `grep -rn 'STUB(<feature-slug>)' <source dirs, excluding docs/>`. Any hit
 means a stub was implemented but not cleaned, or a planned symbol was
 abandoned in place — resolve it (finish or delete) now. The reviewers
 receive the diff in phase 9 and treat a dangling stub on shipped code as a
 finding, so an unswept marker just becomes a review blocker. Use the exact
 slug token from phase 6 — one-character drift makes the grep silently match
-nothing, and a no-op gate reads as "covered" when it isn't. (For a declarative
-artifact no stubs were introduced, so there is nothing to sweep — don't run a
-grep that can only ever match nothing and mistake it for a passed gate; instead
-confirm the green run from phase 6's validation checks.)
+nothing, and a no-op gate reads as "covered" when it isn't. (A run with no
+executable nodes introduced no stubs — don't run a grep that can only ever
+match nothing and mistake it for a passed gate; confirm the green from the
+contract's checks instead.)
 
 ## 8. Documentation
 
@@ -527,8 +568,13 @@ findings, so skipping this phase just converts it into review blockers.
 - Launch both as fresh subagents with only the diff and the design doc —
   no implementation context. That isolation is the point: they check the
   work, not the intentions.
+- **This is the root node's review, not the only review** — each child was
+  already reviewed inside its own loop, so the read-through of the rendered
+  whole being the code's only review is ruled out by the loop's shape, not
+  by a warning. Batch a multi-page artifact review across agents (~7 pages
+  each); a single agent handed 20+ full-page images stalls without returning.
 - **Show the user each review summary** (verbatim findings, not your gloss).
-- Fix blockers and should-fixes with phase 6–7 discipline (tests stay
+- Fix blockers and should-fixes with phase 6–7 discipline (checks stay
   green) — logging a `code-change` ledger event per fix dispatch — then
   re-review. **Max 2 fix rounds**; if the third review still
   has blockers, stop and hand the open findings to the user — and if a
@@ -537,6 +583,12 @@ findings, so skipping this phase just converts it into review blockers.
   round 1/2)`) — the annotation, not the box state, carries the count (on a
   phase-11 re-entry the box is already `[x]`); it lives in the design doc,
   not your memory, and **resets per batch**.
+- **A fix that changes the basis of a prior measurement** (a re-crop, a
+  re-render, a renumbering) invalidates verification of everything derived
+  from that basis, not just the items edited — so the re-review covers the
+  same scope as the review that found the defect; a spot-check is not a
+  re-review. (A fix round that re-cropped 6 images was reported complete
+  after 3 pages were checked; re-verification found 7 misplaced badges.)
 - After each completed pass, append a close-out ledger event: which agents
   ran, **scope `full` or `delta`**, on which checkpoint SHA (or none), what
   was deferred — then, with checkpoint consent, commit the batch-close
@@ -553,34 +605,27 @@ findings, so skipping this phase just converts it into review blockers.
 
 ## 10. Smoke test
 
-Exercise the deliverable end to end (per the *deliverable shape* chosen at
-phase 6) and report what was tried and what was observed. Land the condensed
-result in the design doc — what was exercised, what was observed, a few
-lines, never logs.
-
-- **Long-lived app** — start the software with the run command from
-  ProjectCLAUDE.md (ask the user if there is none). Exercise it broadly: the
-  new feature's main flow, adjacent behavior, logs/console for anomalies. A
-  general-purpose agent may do the poking; the app itself runs from the
-  orchestrator (background Bash) so it survives into the next phase.
-- **Run-to-completion artifact** (declarative workflow, batch job, one-shot
-  script) — there is no persistent process to keep alive; "smoke" is a full
-  end-to-end run through the real toolchain on representative input, checking
-  the produced output + logs for anomalies. This may already be the same run
-  that turned phase 6 green; if so, exercising a *broader* input here (more
-  cases, the adjacent path) is what makes it a smoke test rather than a repeat.
-
-For a **visual/UI** feature the smoke also includes *looking at the rendered
-result*, not just exercising flows — a "tests pass / widget tree is right" check
-is blind to layout, alignment, and styling defects. If the project's available
-agents include a matching visual-QC agent (check the Agent tool's list /
-`.claude/agents/`), delegate that render-and-look QC to it; if not, capture at
-least one rendered view yourself and inspect it.
+Exercise the deliverable end to end — the contract's top node already says
+what exercising means (start the app and poke it, a full toolchain run on
+representative input, render and read). Breadth is what makes this a smoke
+rather than a repeat of the run that turned phase 7 green: broader input,
+more cases, the adjacent path. A long-lived app runs from the orchestrator
+(background Bash) so it survives into phase 11; a general-purpose agent may
+do the poking. Anything rendered gets *looked at*, not just exercised — a
+"checks pass" run is blind to layout, alignment, and styling defects;
+delegate the render-and-look to a matching visual-QC agent from the roster
+(the Agent tool's list / `.claude/agents/`), else capture at least one
+rendered view yourself and inspect it. Land the condensed result in the
+design doc — what was exercised, what was observed, a few lines, never logs.
 
 ## 11. User testing (orchestrator, gate)
 
-Hand the deliverable to the user and wait. For a long-lived app that's the
-running instance; for a run-to-completion artifact (per phase 6's shape) it's
+First, audit your own checklist: re-read every `[x]` and name, one line
+each, the observed evidence behind it — a phase ticked on inference rather
+than execution goes back to `[ ]` (a run has ticked the smoke test PASSED
+before the ship path was ever executed). Then hand the deliverable to the
+user and wait. For a long-lived app that's the running instance; for a
+run-to-completion artifact (per the contract's top node) it's
 the run command + representative input so the user can exercise it themselves,
 plus the last run's outputs to inspect — there's no persistent instance to hand
 over. Every issue the user finds gets fixed **immediately** (phase 7) so
@@ -677,10 +722,14 @@ find ~/.claude/projects -maxdepth 2 -name "$CLAUDE_CODE_SESSION_ID.jsonl"
 
 Pass the agent: that transcript path, its `<session-id>/subagents/` dir (same
 path with `.jsonl` → `/subagents/`), the design doc path, and the kit
-instruction locations (`.claude/skills/build-feature/SKILL.md`,
+instruction locations (`.claude/skills/build/SKILL.md`,
 `.claude/agents/*.md`). The agent digests transcripts in its own context and
 returns only a short list of suggestions, so the run's bulk never enters
-yours.
+yours. Hand over paths, never verdicts about them: the agent resolves its own
+evidence — re-running that `find` and listing the subagents dir itself rather
+than trusting a handed-over path — and never assert on its behalf that
+evidence is absent; an agent that cannot find the record says so instead of
+proceeding.
 
 **Present the returned suggestions to the user verbatim** under
 `## Kit suggestions` in the design doc (folding in any the phase-9 reviewers

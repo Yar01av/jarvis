@@ -3,7 +3,7 @@
 This repo is the kit itself — the skills, agents, and settings that
 `install.sh` deploys into other projects. **The `.claude/` tree here is the
 product**, so editing it is normal work in this repo (the never-modify-
-`.claude/` rule inside `/build-feature` applies to *runs of that skill*, not
+`.claude/` rule inside `/build` applies to *runs of that skill*, not
 to kit development).
 
 ## Commands
@@ -29,7 +29,7 @@ to kit development).
 
 - Instruction prose is load-bearing: keep the existing voice (bold-led
   paragraphs, explicit "why" for every rule), and keep phase numbering
-  stable in `build-feature` — the checklist numbers are a resume mechanism
+  stable in `build` — the checklist numbers are a resume mechanism
   in the wild.
 - Changes to skills/agents ripple to every installed project on the next
   `install.sh` run — prefer additive, conditional instructions over

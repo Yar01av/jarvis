@@ -100,7 +100,7 @@ come back proves nothing.
 - **Durable lesson:** only when the run surfaced a genuinely reusable lesson —
   a non-obvious cause, a gotcha, a dead-end worth not repeating — write
   `docs/solutions/<category>/<slug>.md` and append its one-line pointer to
-  `docs/solutions/INDEX.md`. Format and index rules live in `/build-feature`
+  `docs/solutions/INDEX.md`. Format and index rules live in `/build`
   phase 8 (the canonical statement — in particular, never wire the store into
   the sync-managed root `docs/INDEX.md`). A routine fix writes nothing — the
   store must stay signal-dense.

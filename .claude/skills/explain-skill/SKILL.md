@@ -1,7 +1,7 @@
 ---
 name: explain-skill
 description: Read a skill's source and explain it in depth — its real control flow, hidden steps, gotchas, and side effects — well beyond what the one-line summary reveals. Use when the user runs /explain-skill, or asks to understand/break down/walk through how a specific skill works.
-argument-hint: "<skill name to explain, e.g. build-feature>"
+argument-hint: "<skill name to explain, e.g. build>"
 disable-model-invocation: true
 ---
 

@@ -1,4 +1,4 @@
-# Jarvis — reusable Claude Code agent kit
+﻿# Jarvis — reusable Claude Code agent kit
 
 Single source of truth for the Claude Code configuration I use across projects:
 skills, subagents, settings, and a `CLAUDE.md` template that together define the
@@ -24,10 +24,10 @@ jarvis/
     │   ├── implementer.md
     │   ├── test-writer.md
     │   ├── debugger.md
-    │   ├── kit-retrospective.md  # mines a finished build-feature run for kit improvements
+    │   ├── kit-retrospective.md  # mines a finished build run for kit improvements
     │   └── librarian.md    # owns code-derived docs (codebase map + feature docs)
     └── skills/             # Slash commands (/implement, /fix, /commit, ...)
-        ├── build-feature/  # full pipeline: research → grill → plan/experiment → TDD → review → smoke test
+        ├── build/          # delivery pipeline for any deliverable: research → grill → plan/experiment → validate → build → review (TDD for code, its discipline generalised for docs/decks/data)
         ├── implement/      # explore → plan → build → verify workflow
         ├── fix/            # repro-first bug fixing + fail-on-revert proof
         ├── commit/         # scoped commits + hygiene checks
@@ -90,7 +90,7 @@ Notes:
   automatically; existing projects keep their own `settings.json`, so add the
   block (see `.claude/settings.json` here) manually to opt in.
 - The `worktree.baseRef: "head"` key (worktree-isolated agents branch from
-  the session's HEAD instead of the default branch — `/build-feature`'s
+  the session's HEAD instead of the default branch — `/build`'s
   experiment spikes rely on it) is **merged into existing settings on every
   install**, unlike `statusLine`; a project's own `worktree` values win.
   Manual add is only needed when the merge step warned (no `python3`).
