@@ -11,7 +11,7 @@ Project-specific context lives in `ProjectCLAUDE.md`.
 - Bug fixes: reproduce first (`/fix`), then fix, then prove the repro passes.
 - Never commit unless explicitly asked; use `/commit` when asked. One
   exception: `wip(<slug>)` checkpoint commits inside a user-approved
-  `/build` run (consented at its phase 0) — they stay on the feature
+  `/build` (or `/tree-build`) run (consented at its phase 0) — they stay on the feature
   branch, and the orchestrator reconciles them at phase 12 (squash-or-keep,
   the user's call) before `/commit` runs.
 
@@ -91,6 +91,7 @@ clear, curated picture instead of a raw grep dump.
 Run `/skills` to see all loaded skills. Key ones this kit ships:
 
 - `/build` — delivery pipeline for any deliverable (code, doc, deck, workflow, dataset): research → grill → plan/experiment → validate → build → review. TDD literally for code; the same discipline generalised for everything else — define the observable failure first, see it, then build
+- `/tree-build` — **parked, unvalidated** — recursive `/build` (per-node subloops, parallel siblings); blocked because subagents can't spawn subagents. Kept as a design record; `/build` covers composite deliverables
 - `/implement` — explore → plan → build → verify
 - `/fix` — repro-first bug fixing with fail-on-revert proof and docs close-out
 - `/commit` — scoped commit with hygiene checks

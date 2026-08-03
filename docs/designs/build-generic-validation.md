@@ -229,6 +229,163 @@ contract node at phase 5, DFS order, indented subjects, `blockedBy` = child-befo
 parent; statuses flipped at loop transitions), Workflow-orchestrated phase 7 as the
 later upgrade path for a genuinely drawn tree UI and safe parallel siblings.
 
+## Round 5 — split /build vs /tree-build + compression (2026-07-31, same session)
+
+User direction, now a standing principle (also saved to session memory): don't
+patch instructions for every one-off failure — little things will keep going
+wrong; keep complexity proportional; quarantine experimental machinery.
+
+- The recursion (contract tree, nested subloops) moved out of `/build` into a new
+  **`/tree-build`** skill (102 lines): a delta over `/build` that instructs reading
+  `.claude/skills/build/SKILL.md` as the base and amends only the contract section
+  and phases 6/7/9, plus one tiering row (nested node review, brain-top).
+  Single-sourced — no duplicated pipeline text to drift.
+- `/build` is flat again: one deliverable, one medium, one contract — the four
+  fields survive (medium + ship tag, red with observable-/authored-first split,
+  checked by, review), and a composite deliverable triggers an explicit
+  "recommend `/tree-build` and stop" routing rule. 867 → 786 lines while keeping
+  all ledger/tiering hardening. Bloat harvested: concretizing re-explanations at
+  phases 3/5 → pointers, reconcile-offer ×3 → 1 (preamble owns it), phase-13
+  never-modify restatement → pointer, fan-out escalation restatement, phase-11
+  ship-gate reminder dupe, phase-9 tree bullet, tree example → tree-build.
+- CLAUDE.md (skills list + the wip-commit exception naming both skills) and
+  README updated.
+- **Mid-round correction from the user:** `/tree-build`'s purpose is *speed and
+  reliability*, not only mixed media — parallelism is the point, and same-medium
+  splits (parallel Python modules) are in scope when the parent proves the
+  children can't step on each other's toes. Split rule rewritten to exactly two
+  reasons (different validation medium | parallelizable independence); new
+  "Parallel siblings" section overrides /build's sequential-only rule — parent
+  owns the safety call (child file sets named in the plan and verified disjoint,
+  shared seams assigned to assembly never to a child, worktree isolation or
+  sequential fallback otherwise, parallel plan presented at the phase-5 gate,
+  background dispatch, re-green on the shared tree before each node's scoped
+  checkpoint). /build's routing, fan-out note, and both descriptions updated to
+  send composite *and* large-parallel cases over.
+- Parallel-path probe (four parser modules + shared registry): **happy path fully
+  executable by a literal reader** — correct tree, registry to assembly, all reds
+  at 6, background builders, review → re-green → scoped checkpoint per close,
+  root review deferred to 9; precedence clear both directions. Its structural
+  gaps, fixed with one unifying rule: *the named file set scopes everything
+  about its node* — build dispatch, re-green, checkpoint staging, nested-review
+  diff, and recovery (a failed child restores through its own paths only; never
+  reset the shared tree while siblings run); nested reviews declared read-only
+  and concurrency-safe; worktree fallback gated on the checkpoint chain, merge =
+  parent's assembly work. Base fix: the orchestrator logs `code-change` events
+  (the old grammar had the dispatched agent writing the design doc, which the
+  preamble forbids — latent sequentially, a four-way race in parallel). Left
+  unpatched (anti-overfit): plan-gate kickback while siblings run (await them —
+  a reading, not a rule), whole-suite re-green misread (derivable from the
+  contract).
+
+## Round 6 — deferred features landed (2026-07-31, same session)
+
+- **Artifact shapes**: `## Artifact shapes` convention section in
+  ProjectCLAUDE.md — one line per validation medium, optional pointer to a
+  style/template doc; `ProjectCLAUDE.md.template` ships a commented stub.
+  /build's contract section gained a five-line lookup rule: a listed medium's
+  shape constrains the plan and seeds the red/rubric (a violation fails a check
+  instead of surfacing as taste at review); absent section or medium = author
+  freely. /tree-build inherits via the base. A project like wfe-requests can
+  now pin Blinqx slide style + Python/pytest without touching any skill.
+- **Live task tree**: /tree-build-only phase-5 addition — one task per contract
+  node, created depth-first with the tree drawn in the subjects, `blockedBy` =
+  children-block-parent + sibling dependencies, statuses flipped at loop
+  transitions (in_progress at loop open, completed at node close). /build
+  deliberately untouched: a single-contract run needs no tree panel.
+- Both features are probe-untested by choice — the pending pilot run exercises
+  them for real (give the pilot repo an `## Artifact shapes` section).
+
+## Round 7 — recursion parked, /build refined (2026-08-03)
+
+**`/tree-build` is parked, and the reason is structural**: Claude Code subagents
+cannot spawn subagents, so its nested loops never recurse through delegation —
+the orchestrator would hold the entire tree itself, buying bookkeeping and
+context pressure rather than recursion. The pilot run (console tic-tac-toe,
+`projects/tictactoe`, stopped at phase 4 by the user) never validated it end to
+end. The file is kept as a design record with a PARKED banner naming the
+blocker, and its description, CLAUDE.md and README all say so; revisit if the
+constraint changes (agents that delegate, or a Workflow script driving phase 7
+from the main session, which *can* fan out).
+
+**`/build` is self-sufficient for composites again** — without regrowing a tree:
+one deliverable, one contract, but *a contract may owe more than one check*.
+Parts validated differently get extra `red` / `checked by` lines in the same
+contract — "never extra nodes, orderings or loops" — and they are **additive: a
+whole-artifact check never discharges a part's**, earned by the one-sentence PDF
+anecdote. Concurrency is named as the parked open problem, so a reader hitting a
+large parallelizable build learns it's known-hard rather than nothing.
+
+**Pilot-proven fixes** (found by the real run, not by probes):
+
+- **P1 greenfield**: phase 0 assumed a repo with history — `git rev-parse HEAD`
+  errors on an unborn HEAD, so the ledger had no base. Phase 0 now says to
+  `git init -b main` and make one real bootstrap commit before branching.
+- **P2 deliverable outside the invoking repo**: unspecified, and dangerous — a
+  bare `git commit` would have put `wip(tictactoe)` on the kit's own feature
+  branch, on top of unrelated uncommitted work. First patched as a cross-repo
+  capability, then **resolved by refusing the case instead of supporting it** —
+  see the narrowing below.
+
+**F7 — the three incompatible fix disciplines are one protocol now**, stated once
+in the preamble and referenced from 9 and 11: reproduce first, `debugger` when
+the cause isn't obvious, and — the case that made the old wording
+self-contradictory — an explicit path when *no reliable repro can be made*: say
+so, stand the fix on deterministic evidence at whatever level is deterministic
+(the unit that mishandles the race, not the race), record the caveat. The
+11-line phase-11 debugger paragraph collapsed into the pointer, so this shrank
+the file.
+
+**F9** — an unticked box at phase 11's audit is now work owed, executed before
+the hand-over, not an annotation. **F17** — phase 10 must keep the run's outputs
+on disk and say where, since phase 11 hands them over.
+
+**Verification, then a narrowing.** A focused probe (two hostile phase-0 cases,
+the fix protocol, the composite PDF without the sibling skill) confirmed three
+areas clean: the unborn-HEAD trap "explicitly and correctly defused", the fix
+protocol "genuinely single-sourced with a complete, non-colliding no-repro
+path", and the composite mechanism working with both the script's code and the
+rendered pages checked and reviewed, displacement "explicitly forbidden". It also
+found the cross-repo support half-done, so a second probe traced every
+git-touching phase for wrong-repo writes — and that probe killed the feature:
+
+- Four HIGH/MEDIUM findings, all the same shape: cross-repo support is **one
+  phase-0 sentence that has to hold across twelve phases and a dozen
+  delegations**, and it doesn't. Bare `git diff` in the atomicity-recovery
+  paragraphs (destructive — it reverts the *invoking* repo's uncommitted work),
+  no delegation carrying the target path (a librarian running `/sync-docs`
+  against the wrong repo), `isolation: worktree` having no repo parameter so the
+  "point it at the target" branch isn't even executable, and no durable anchor
+  after compaction (phase 12's ledger-recreation path then writes the wrong
+  repo's HEAD as base, making `reset --soft` silently rewind it).
+- **Resolution: `/build` refuses cross-repo runs rather than supporting them.** A
+  Claude Code session is scoped to one repo — subagents inherit its cwd,
+  `/commit` runs there, worktrees branch there, recovery diffs read there. Phase
+  0 now detects the mismatch and stops: create and `git init` the target,
+  bootstrap-commit it, tell the user to start a session there and re-invoke.
+  One rule, one enforcement point, and all four findings dissolve because there
+  is no second repo left to get wrong. Everything added earlier this round for
+  the capability (the `git -C <home>` invariant, phase 12's `/commit` carve-out,
+  the worktree caveat, the `home:` ledger field) was reverted.
+- **Same lesson as parking the recursion, one layer down**: both were fights
+  against harness-level scoping — no nested subagents, one repo per session. A
+  skill that depends on an invariant the harness doesn't enforce will lose it.
+
+Kept from the probe rounds regardless: the STUB gate now keys on the presence of
+an executable *check* rather than the deliverable's medium (it silently skipped
+stubs for a tested build script, colliding with phase 6's own right-reason
+rule); phase 10 added to the close-out caller enumeration and the seed comment's
+`delta` list; the frontmatter no longer routes composites to the parked sibling;
+the dirty-tree case now stops rather than warns before branching; plus four
+grammar/duplication seams from this session's editing (including an unresolvable
+"CE" acronym).
+
+Still open: P3 — phase 8's `docs/solutions/` has no home for a lesson about the
+*skill* when the deliverable lives outside the kit (resolved ad hoc as
+phase-13 kit suggestions). Deliberately unpatched per the anti-overfit rule: the
+unnamed fixer agent, the debugger's phase-11-only row labels, "recreate the
+branch" naming no ref, and the resume bullet's tangled-but-parseable sentence.
+
 ## Parked — found in the same read, out of scope here
 
 Pre-existing drift unrelated to this feature, recorded so it isn't lost: the `plan` token
@@ -260,16 +417,30 @@ gate-escape where a gate-filling librarian's doc edits shipped reviewer-unseen;
 on; phase 7 no longer claims delta reviews diff from per-node SHAs; the
 ledger-missing fallback now records its re-runs and recreates the ledger section;
 phase 11 logs the batch-close SHA line its own next delta depends on.
-Tiering: `debugger`, ship-gate re-runs, floating experiments (phases 1–2), phase-10
-render-and-look, and phase-11's delta reviewer are untiered or only tiered in phase
-bodies; the `/commit` "hands" row is unimplementable via a Skill call (F4, F5).
+Tiering drift — **F4, F5, F18, F19 fixed in round 4 (same session, after commit
+`baeaba8`)**: hands/brain bullets deleted — the table is the single tier source,
+with a nearest-analogue rule for unrowed dispatches; rows added for floating
+experiments (1–4), phase-7 non-executable builders, phase-10 render-and-look,
+phase-11 delta review (brain-top) and debugger (brain-mid), and phase-12 ship-gate
+re-runs (their own phase rows); `/commit` re-rowed as session-model with the
+Skill-vs-Agent-param mechanism stated; ceiling paragraph folds delta reviews into
+brain-top and debugger into brain-mid and states the sonnet-ceiling flag duty;
+phase-10 poking made mandatory delegation. A targeted Fable probe then enumerated
+all 23 dispatch kinds, derived every tier, and resolved two full runs (`--brain
+fable`, ceiling `sonnet`): **coherent — single-source table holds, ceiling splits
+match the rows exactly, no same-dispatch contradictions, mechanism claims sound**.
+Its residue, fixed same pass: an experimenter "brain" recommendation defined as
+brain-top (brain-mid only for research-like evidence gathering); escalation
+declared ceiling-exempt with one attempt per rung and blocked-after-fable → plan
+gate (phase 7 aligned); the concretizing render tiered hands in place; row 6
+annotated "a rubric run is a check, not the review" to split it from brain-top
+review reads.
 Protocol drift: three incompatible fix disciplines across 7/9/11, with the debugger
 path dropping red entirely (F7); phase-11's checklist audit unticks boxes with no
 re-entry rule (F9); "batch" and the fix-round cap's reach in phase 11 undefined
 (F12). Flags/interface: `--from` on a resume slug undefined (F14); smoke outputs
-consumed at 11 but preserved nowhere (F17); sonnet-ceiling flag duty not restated at
-the ceiling paragraph (F18); phase-10 poking optional vs delegate-everything (F19);
+consumed at 11 but preserved nowhere (F17);
 resume branch recreation names no source ref (F20); phase 12 is interactive but
-absent from the gates list (F22). Bloat re-confirmed and extended: tier bullets vs
-table, roster ×2, concretizing ×3, reconcile-offer ×3, never-modify ×3, escalation
+absent from the gates list (F22). Bloat re-confirmed and extended (tier bullets vs
+table resolved in round 4): roster ×2, concretizing ×3, reconcile-offer ×3, never-modify ×3, escalation
 ×3, displaced-review anecdote ×2, ~7-pages ×2, ship-gate reminders ×3.

@@ -26,6 +26,18 @@
 - Match the style of surrounding code over any general rule.
 - <naming / error-handling / logging conventions specific to this repo>
 
+## Artifact shapes
+
+<!-- Optional: house shapes per validation medium, consumed by /build and
+     /tree-build when authoring the validation contract — a listed medium's
+     shape constrains the plan and seeds the red/rubric. One line per medium;
+     point to a style/template doc when one line isn't enough. Delete the
+     section if this project ships plain code only. -->
+
+- slides: <e.g. "company deck style — docs/style/deck.md">
+- executable: <e.g. "Python + pytest">
+- rendered pages: <e.g. "A4, house typography">
+
 ## Boundaries
 
 <!-- Things Claude must not touch: generated files, vendored code, migration

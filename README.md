@@ -28,6 +28,7 @@ jarvis/
     │   └── librarian.md    # owns code-derived docs (codebase map + feature docs)
     └── skills/             # Slash commands (/implement, /fix, /commit, ...)
         ├── build/          # delivery pipeline for any deliverable: research → grill → plan/experiment → validate → build → review (TDD for code, its discipline generalised for docs/decks/data)
+        ├── tree-build/     # PARKED design record — recursive /build; blocked: subagents can't spawn subagents
         ├── implement/      # explore → plan → build → verify workflow
         ├── fix/            # repro-first bug fixing + fail-on-revert proof
         ├── commit/         # scoped commits + hygiene checks
