@@ -1,6 +1,6 @@
 ---
 name: kit-retrospective
-description: Reviews a completed build-feature RUN — its raw session + subagent transcripts — to surface concrete kit-improvement suggestions. Reviews the process, not the code; the other reviewers own the diff. Use as the final phase of a feature build, after commit.
+description: Reviews a completed /build RUN — its raw session + subagent transcripts — to surface concrete kit-improvement suggestions. Reviews the process, not the code; the other reviewers own the diff. Use as the final phase of a /build run, after commit.
 tools: Read, Grep, Glob, Bash
 model: inherit
 ---
@@ -27,8 +27,14 @@ wording; you never change them. Output goes to the user, who decides.
 - Path to its `<session-id>/subagents/` dir (`agent-*.jsonl` + `*.meta.json`).
 - Path to the feature's design doc (the run's accumulated state, incl. any
   existing `## Kit suggestions` from phase-9 reviewers — fold those in).
-- Kit instruction locations: `.claude/skills/build-feature/SKILL.md`,
+- Kit instruction locations: `.claude/skills/build/SKILL.md`,
   `.claude/agents/*.md`.
+
+These paths are claims, not facts — resolve the transcript and subagents dir
+yourself (a real run passed a task-output directory id as the session id, then
+asserted an empty subagents dir that held 30 files). If you can't find a
+record, say so in your output; **never assert on the orchestrator's behalf
+that evidence is absent**.
 
 ## Method — digest first, sample second (token-bounded)
 

@@ -1,6 +1,6 @@
 ---
 name: implement
-description: Structured feature implementation — explore, plan, build, verify. Use for any non-trivial feature or change instead of diving straight into code.
+description: Structured implementation of a contained change — explore, plan, build, verify. Deliberately ceremony-free: no design doc, no gates, no branch, you stay in the loop yourself. Use instead of diving straight into code. Reach for `/build` when the work needs a signed-off plan, independent review, or a durable resumable record.
 argument-hint: "<what to build>"
 disable-model-invocation: true
 ---
@@ -8,6 +8,12 @@ disable-model-invocation: true
 Implement the following: $ARGUMENTS
 
 Work through these phases in order. Do not skip ahead to writing code.
+
+**Wrong skill?** This is the cheap path — one contained change, no branch, no
+design doc, no user gates, and you review the diff yourself. If the work wants a
+plan someone signs off, review by an agent that didn't write it, or a record that
+survives a session boundary, stop and use `/build` instead. Switching later means
+redoing the plan under a gate; switching now costs nothing.
 
 ## 1. Explore
 

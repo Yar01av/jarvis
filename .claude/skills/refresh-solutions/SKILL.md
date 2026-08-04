@@ -1,11 +1,11 @@
 ---
 name: refresh-solutions
-description: Curate the docs/solutions/ knowledge store — prune stale lessons, merge duplicates, repair the index — so it stays signal-dense as the codebase moves. Companion to build-feature's phase-8 capture.
+description: Curate the docs/solutions/ knowledge store — prune stale lessons, merge duplicates, repair the index — so it stays signal-dense as the codebase moves. Companion to /build's phase-8 capture.
 argument-hint: "[--apply to skip the confirmation gate] [optional: category to focus on]"
 disable-model-invocation: true
 ---
 
-Keep `docs/solutions/` — the captured-lessons store that `/build-feature`
+Keep `docs/solutions/` — the captured-lessons store that `/build`
 phase 8 writes and phase 1 reads — honest and signal-dense. Lessons rot: the
 code a gotcha warned about gets refactored away, two runs capture the same
 insight, the index drifts from the files. Left alone the store becomes noise
@@ -21,7 +21,7 @@ full proposal and get the user's confirmation before touching content — unless
 ## 0. Precondition
 
 If `docs/solutions/` doesn't exist, there's nothing to curate — say so and
-stop. The store is born on the first qualifying `/build-feature` run.
+stop. The store is born on the first qualifying `/build` run.
 
 ## 1. Inventory
 
