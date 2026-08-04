@@ -32,7 +32,7 @@ one (the deliverable is `install.sh` itself, so no cross-repo question).
 - [x] 10 Smoke test (real project; headline invariant holds, 4 UX defects found)
 - [x] 11 User testing (green light given; both open decisions accepted as-is)
 - [x] 12 Committed (squashed to one commit; ledger SHAs replaced by milestones)
-- [ ] 13 Kit retrospective
+- [x] 13 Kit retrospective (4 new items, 13–16 below)
 
 ## Close-out ledger
 <!-- Header: `Checkpoints: yes|no · base: <git rev-parse HEAD at phase 0>`.
@@ -1258,7 +1258,103 @@ From phase 12 — the ship gate met reality:
     when the orchestrator has already verified the tally on unchanged code, is
     both cheaper and more likely to finish. `/build` currently says phase 9's
     reviewers run in parallel and phase 12 inherits that shape without comment.
-12. **A tighter dispatch scope fixed the stalling librarian.** Its phase-8
+### From the phase-13 retrospective (items 13–16)
+
+Presented as the agent returned them. It resolved its own evidence — 1940
+transcript lines, 36 subagent records — and listed what it deliberately did not
+inspect (the phase-6 test-writer and phase-7 implementer transcripts, the three
+stalled dispatches' own records, and whether phase 11's per-tick audit claims
+actually hold).
+
+13. **[high] The concretizing gate instantiated the interface's *nominal* state
+    only — and every phase-10 smoke defect lived in a state nobody instantiated
+    or executed.** `.claude/skills/build/SKILL.md`, the concretizing paragraph
+    plus one clause at phase 7. The rule was honoured well: the gate carried
+    three `AskUserQuestion` previews (output shape, granularity, exit codes).
+    All three showed the happy path and the already-current path. All three
+    phase-10 defects were **degenerate or partial-knowledge states of the very
+    interface that was gated**, and two were never executed until phase 10. The
+    rule's own rationale indicts the outcome — *"prose is a poor medium to
+    confirm it in… reads as complete and unambiguous prose while quietly
+    assuming exactly one of the thing being configured"* — and the exit-0
+    invariant sat in prose in this doc, twice, signed off at phase 5; the smoke
+    brief had to quote it back at the code to prove the defect. **Proposed:** the
+    instantiation must cover declared **failure and partial-knowledge** states,
+    not just the nominal one — for a CLI, one sample per exit code the contract
+    defines, including the "cannot determine" case. Plus a phase-7 exit
+    precondition, *before* reviewers are dispatched: execute the documented
+    interface once per declared state and paste the observed output into the
+    design doc. Phase numbering stays stable; phase 10 keeps its breadth
+    charter for the post-fix re-exercise.
+    **Why it pays:** both fix rounds and the entire "max 2" budget were spent on
+    comment and harness hygiene *before anything was exercised end to end*. The
+    smoke fixes then landed as a `code-change` after the phase-9 full close-out,
+    legitimately reopening the ship gate → librarian + both reviewers again →
+    three of those dispatches died and one needed substituting. One cheap
+    hands-tier execution pass at phase 7 collapses that entire tail.
+
+14. **[high] The orchestrator is the only actor in the pipeline whose output is
+    never checked at the time it is produced — and the kit already has the rule,
+    applied to everyone else.** `code-reviewer.md` says *"Verify before you
+    report. Open the file, check the claim. A finding you haven't verified is a
+    guess."* There is no counterpart for the actor writing briefs, README prose
+    and design-doc claims. Items 6 and 7 are symptoms; three further instances
+    went unlogged: **(a)** a fabricated premise presented as prior intent — *"the
+    parse loop **was supposed to** (`printf 'Unknown option: %s'`)"* — a string
+    that existed nowhere, which the implementer had to refute; **(b)** three
+    orchestrator-written README inaccuracies, two of them caught only at the
+    ship gate, plus the `prediction incomplete` marker documented as stderr when
+    it is stdout — the one string advertised as machine-readable; **(c)**
+    **phase 9's "Show the user each review summary (verbatim findings, not your
+    gloss)" was silently skipped on both passes** — narrative prose was
+    presented instead, so the orchestrator's rendering was the only version in
+    the room, and the mis-attributed size estimate survived a round longer than
+    it needed to. **Proposed:** extend the verify-before-you-report rule to the
+    orchestrator (a claim about code in a brief or a doc is quoted from an
+    agent's report, or verified by reading the file that turn, or labelled
+    `unverified` — and **never phrased as prior intent**); extend
+    `implementer.md`'s escalation from design-doc ambiguity to **a false factual
+    premise in the brief**, since hands tier cannot distinguish an
+    orchestrator's verified claim from its guess and treats both as spec; and
+    route code-derived reference tables the orchestrator writes (exit codes,
+    flag lists, which stream a marker goes to) through the phase-8 librarian
+    rather than discovering them at the ship gate.
+
+15. **[medium] Phase 9 gives two contradictory rules for a re-review's diff base,
+    and the run picked one silently.** *"The diff's base: the ledger's run base
+    on the first pass, the last reviewed checkpoint on re-reviews"* versus the
+    basis-invalidation rule's *"the re-review covers the same scope as the review
+    that found the defect."* Both re-reviews recorded the run base, so every one
+    re-pulled the whole diff. **Proposed:** default to the last reviewed
+    checkpoint; escalate to the original scope only when the fix changed a
+    *basis* other findings derived from; and require the ledger's `checkpoint`
+    field to name which rule fired, so a deliberate full re-diff is
+    distinguishable from an unexamined default.
+
+16. **[medium] Resuming a completed reviewer to verify its own fixes worked, cost
+    about one turn, and the skill never mentions it.** Every fresh re-review in
+    this run cost 73–98 turns and 400–670 KB of transcript, and two died before
+    doing any work; the resumed ship-gate reviewer came back in one turn having
+    re-verified all three trap paths on two bash versions. Phase 9's *"Launch
+    both as fresh subagents… that isolation is the point"* is right for a first
+    pass and reads as governing re-reviews too. **Proposed:** name the resume
+    path for the narrow case only — verifying that findings *the same agent
+    authored* were applied as specified, where isolation isn't at risk because it
+    is checking its own list. First passes, and any pass establishing `full`
+    scope over an unseen tree, stay fresh dispatches. (Distinct from 12a, which
+    is about narrowing a *fresh* dispatch after a stall.)
+
+**The retrospective's own verdict on cost, quoted because it is the honest
+summary of this run:** the plan gate, the ship-gate reviewers, the smoke test and
+the librarian each caught something a normal session ships — a self-corruption
+risk, a bash-3.2 trap regression, the exit-0 gate-contract bug, three README
+errors. But *"two brain-tier reviewers × two passes, ~1000 subagent turns, to
+churn comments — while all three behavioural defects sat unfound because nothing
+had been executed outside the test harness. That contrast is the empirical case
+for item 13: the expensive net was spent on the dimension the cheap net would
+have covered, and the cheap net ran last."*
+
+12a. **A tighter dispatch scope fixed the stalling librarian.** Its phase-8
     dispatch was open-ended and died on a watchdog; the phase-12 re-dispatch
     named three files, one section each, and explicitly blessed "no change" as a
     valid result — it finished in four minutes and found three real defects.
