@@ -10,11 +10,23 @@ Build the following deliverable end to end: $ARGUMENTS
 You are the **orchestrator**. Delegate every work phase to its named agent;
 run only the interactive gates yourself (subagents can't talk to the user).
 **Know your roster before you start: skim the Agent-tool's available-agents list
-(it comes with a description per agent; `.claude/agents/` is the backing registry)
-so you know which specialist agents *this project* ships beyond the named phase
-agents — a visual/GUI, plots, decks, or other domain agent. When a phase's work
-matches one, delegate to it instead of hand-rolling; the roster is discovered each
-run, so a newly-added agent needs no change here.**
+(`.claude/agents/` is the backing registry) so you know which specialists *this
+project* ships beyond the named phase agents — visual/GUI, plots, decks, other
+domains. When a phase's work matches one, delegate instead of hand-rolling; the
+roster is discovered each run, so a new agent needs no change here.**
+
+**Your own output is the only thing here nobody reviews — so verify it.** The
+reviewers are told a finding they haven't checked is a guess; the same holds for
+you. Every claim about code in a dispatch brief or a doc you write is either
+quoted from an agent's report, or read from the file *this turn*, or labelled
+`unverified — confirm first`. **Never phrase a claim as prior intent** ("was
+supposed to", "the plan said", "this used to") — hands tier can't tell your
+verified claim from your guess and will implement to either. Two brief-writing
+rules from the same root: **phrase a change as what must stop being true, not as
+a line to delete** (a literal "delete this comment" removed a load-bearing
+signature header), and **when a defect is a pattern, ask for a sweep, never hand
+over a list** (an enumerated list guarantees the items you missed survive).
+
 The design doc `docs/designs/<feature-slug>.md` is the shared spec: agents
 read it — never assume an agent saw this conversation. **Agents return
 results as their final message; you write them into the design doc.** Don't
@@ -30,10 +42,8 @@ terminates early (spend/usage limit, API error, crash, context exhaustion), trea
 any files it was editing as possibly left in an incoherent, half-done state.
 Before building on its work, inspect `git diff` and restore a coherent tree —
 revert to the last-good state or finish the edit yourself. **A green test suite is
-not proof of tree coherence:** a partial edit can pass the whole suite yet be
-broken (a re-parented-but-ungridded widget, a half-applied refactor, colliding
-layout, or anything the tests don't cover). This applies to every delegated phase,
-not one.
+not proof of tree coherence:** a half-applied refactor can pass the whole suite.
+This applies to every delegated phase, not one.
 
 **Checkpoint commits give that recovery a ref to stand on.** At phase 0, ask
 once: *"this run makes `wip(<slug>)` checkpoint commits on the feature branch,
@@ -43,16 +53,17 @@ milestone lands (a module green, a draft assembled), and after each batch close-
 close-out) — logging each SHA as an event in the close-out ledger. Stage
 explicitly (`git add <paths>`), never `git add -A`: concurrent spike worktrees
 and stray files must not ride along. The atomicity recovery above then becomes
-concrete: `git diff <last-checkpoint>`, restore from it. Reconciliation is the
-**orchestrator's** job at phase 12, not `/commit`'s (that skill neither
-squashes nor amends — see phase 12 for the mechanism); squash-or-keep is the
-user's call there. A run that ends before phase 12 (`--to`, a review halt, an
-abandon) leaves the chain live — say so and offer to reconcile on the spot.
-After any early reconcile, set the ledger header's `base` to the new HEAD: a
-later phase-12 squash must never rewind past an already-reconciled commit.
-If the user declines checkpoints, run without them; the delta-review and
-recovery steps below fall back to dirty-diff mechanics (weaker — say so when
-it bites).
+concrete: `git diff <last-checkpoint>`, restore from it. **Never write a SHA
+into the ledger via `--amend`** — that orphans the very commit the line names;
+use a follow-up commit. Reconciliation is the **orchestrator's** job at phase
+12, not `/commit`'s; squash-or-keep is the user's call there, and a squash means
+rewriting the ledger's SHAs into milestone descriptions so nothing points at a
+commit that no longer exists. A run that ends before phase 12 leaves the chain
+live — say so and offer to reconcile. After any early reconcile, set the ledger
+header's `base` to the new HEAD: a later squash must never rewind past an
+already-reconciled commit. If the user declines checkpoints, the delta-review
+and recovery steps fall back to dirty-diff mechanics (weaker — say so when it
+bites).
 
 **Experimentation is a floating capability, not a fixed phase.** Whenever
 any phase surfaces a falsifiable uncertainty — research claims an unproven
@@ -62,32 +73,27 @@ and loop back to the phase that raised the question with the verdicts.
 Expect multiple back-and-forth cycles across the pipeline; phase 4 is just
 where the loop is most common, not the only place it's allowed. All
 verdicts accumulate in the design doc's `## Experiments`. One tree caveat for
-every worktree-isolated spike: a worktree sees only **committed** state,
-whatever it branches from. The kit's baseline settings.json pins
-`worktree.baseRef: "head"` (branch from the session's HEAD) — **confirm the
-pin exists in this project's settings** (a pre-existing install won't have it
-until `install.sh` re-runs) or the spike silently branches from the default
-branch instead. Either way, a spike whose verdict depends on uncommitted work must
-get the relevant diff inlined in its prompt, run after a checkpoint commit
-(see Checkpoints above), or run non-isolated with the orchestrator aware it
-may touch the tree. A verdict tested against the wrong tree is worse
-than no verdict — it steers the architecture with false confidence.
+every worktree-isolated spike: a worktree sees only **committed** state.
+The kit's baseline settings.json pins `worktree.baseRef: "head"` — **confirm
+that pin exists in this project** (a pre-existing install lacks it until
+`install.sh` re-runs) or the spike silently branches from the default branch.
+Either way, a spike whose verdict depends on uncommitted work needs the diff
+inlined in its prompt, a checkpoint commit first, or a non-isolated run. A
+verdict tested against the wrong tree is worse than no verdict.
 
 **Fixing a defect found after green is one protocol, wherever it surfaces** —
 phase 9's review, phase 10's smoke, phase 11's user testing. **Reproduce
 first:** an observed failure is this pipeline's red, and a fix without one is a
-guess. When the cause isn't obvious — non-deterministic, hard to reproduce,
-"works here but not there" — dispatch **`debugger`** before touching code; it
-root-causes in its own context (minimal repro, instrumentation,
-hypothesis-falsification) and returns the cause plus a proposed fix, so the
-bisecting odyssey never floods yours. **When no reliable repro can be made** —
-the defect is genuinely probabilistic — don't let that quietly cancel the red:
-say so, stand the fix on the closest deterministic evidence instead (the
-debugger's falsification trail, plus a regression check at whatever level *is*
-deterministic — the unit that mishandles the race, not the race), and record in
-the design doc that the repro is probabilistic. Then fix, keep the checks green,
-log a `code-change` event, and take the review the surfacing phase prescribes:
-phase 9 re-reviews at the same scope, 10 and 11 use the two-speed delta review.
+guess. When the cause isn't obvious — non-deterministic, "works here but not
+there" — dispatch **`debugger`** before touching code, so the bisecting odyssey
+runs in its context and not yours. **When no reliable repro can be made**, don't
+let that quietly cancel the red: say so, stand the fix on the closest
+deterministic evidence (the debugger's falsification trail plus a regression
+check at whatever level *is* deterministic — the unit that mishandles the race,
+not the race), and record in the design doc that the repro is probabilistic.
+Then fix, keep the checks green, log a `code-change`, and take the review the
+surfacing phase prescribes: 9 re-reviews at the same scope, 10 and 11 use the
+two-speed delta.
 
 **The contract's *checked by* is a delegation, not orchestrator work** — one
 exception: a mechanical grep/compare you can run inline. Rendering a
@@ -104,15 +110,18 @@ inspect it, never silently skipping the *look*.
 one.** Whenever a decision settles the *shape* of something a human or another
 system will directly perceive or consume — a UI control, a CLI command's output,
 an API request/response, a config schema, a file or data format — prose is a poor
-medium to confirm it in. "A dropdown plus a token field" reads as complete and
-unambiguous prose while quietly assuming exactly one of the thing being
-configured — the kind of gap that surfaces only once the control exists and
-someone asks "what about two?" Whenever such a decision arises — most often at
-phase 3 (the grill) or phase 4 (the plan) —
+medium to confirm it in: it hides wrong cardinalities, defaults and orderings
+behind sentences that read as complete. Whenever such a decision arises — most
+often at phase 3 (the grill) or phase 4 (the plan) —
 produce the smallest concrete instantiation that fits the medium before treating
 the decision as settled: a rendered mock or ASCII sketch for a UI, an example
 request/response for an API, a sample invocation + output for a CLI, an example
-file for a config/data format. Confirm the instantiation itself (an
+file for a config/data format. **Instantiate the declared failure and
+partial-knowledge states too, not just the nominal one** — one sample per exit
+code including "cannot determine", the error envelope, the rejection message.
+A gate that previewed only the happy path is how a documented invariant
+("exit 0 must never claim knowledge it lacks") gets signed off in prose and
+violated in code. Confirm the instantiation itself (an
 `AskUserQuestion` `preview`, or a throwaway render checked with a specialist agent
 per the paragraph above — a hands-tier dispatch; the judgment sits at the
 gate that confirms it, not with the renderer) rather than a prose description alone — cheapest done
@@ -196,19 +205,16 @@ let them confirm or override.
 ## 0. Setup (orchestrator)
 
 - Derive a short `<feature-slug>` from the arguments.
-- **This pipeline runs in the repo you were invoked from. It does not run
-  cross-repo — refuse to.** A session is scoped to one repo: subagents inherit
-  that working directory, `/commit` runs there, worktree isolation branches
-  there, and every recovery `git diff` reads there. A run that aims its commits
-  somewhere else has to hold that invariant across twelve phases and a dozen
-  delegations, and it will lose it — an un-briefed librarian bootstraps the
-  wrong `docs/` tree, a recovery revert wipes the wrong uncommitted work. So
-  when the deliverable belongs elsewhere ("keep it out of this repo", a
-  standalone project): **stop here.** Create the directory, `git init -b main`
-  it, give it one real commit (README/`.gitignore`) — `git rev-parse HEAD`
-  errors on an unborn HEAD and the ledger needs a base — then tell the user to
-  start a session there and re-invoke. Setting that up is this phase's whole
-  output; don't build from here.
+- **This pipeline runs in the repo you were invoked from — it does not run
+  cross-repo, so refuse to.** A session is scoped to one repo: subagents inherit
+  that cwd, `/commit` runs there, worktrees branch there, recovery diffs read
+  there. Holding a different target across twelve phases and a dozen delegations
+  will fail — an un-briefed librarian bootstraps the wrong `docs/` tree, a
+  recovery revert wipes the wrong work. So when the deliverable belongs elsewhere
+  ("keep it out of this repo", a standalone project): **stop here.** Create the
+  directory, `git init -b main`, give it one real commit (`git rev-parse HEAD`
+  errors on an unborn HEAD and the ledger needs a base), and tell the user to
+  start a session there and re-invoke. That setup is this phase's whole output.
 - If `docs/designs/<feature-slug>.md` exists **in the working tree or on
   `feature/<slug>`** — a consented-checkpoint run commits the doc there and
   leaves the tree clean, so from `main` it's invisible; check
@@ -293,21 +299,16 @@ truthful.
 
 Guardrails:
 
-- **Only the front phases (1-3: Research, Go/no-go, Requirements) are freely
-  skippable.** The validate → build → review spine (6+) is mandatory — refuse
-  to skip past it; that's where correctness is enforced — skip ideation if you
-  must, never skip review. Skipping straight to 4 (planner)
-  is the common, supported case. This holds **whatever the deliverable is**:
-  a config, schema, workflow, or document with no test suite still runs the
-  full spine — "there are no tests here" is never a reason to skip 6–9; the
-  phase-4 validation contract defines what red / green / run mean for it.
-- **No fake sections.** Don't fabricate a Requirements or Research section for
-  a skipped phase. When you skip to the planner (4), pass it the feature
-  description directly and instruct it to surface any missing context as
-  **Open unknowns**. The phase 5 plan-gate is the safety net — the user catches
-  a wrong abstraction there before any red is built.
-- If a downstream phase turns out to genuinely need a skipped phase's output,
-  say so and offer to run that phase now rather than guessing.
+- **Only the front phases (1-3) are freely skippable.** The validate → build →
+  review spine (6+) is mandatory — skip ideation if you must, never skip review.
+  Straight to 4 is the common case. This holds **whatever the deliverable is**:
+  "there are no tests here" is never a reason to skip 6–9; the phase-4 contract
+  defines what red / green / run mean for it.
+- **No fake sections.** Don't fabricate a Requirements or Research section for a
+  skipped phase; pass the planner the description directly and have it surface
+  gaps as **Open unknowns**. The phase-5 gate is the safety net.
+- If a later phase genuinely needs a skipped phase's output, say so and offer to
+  run it rather than guessing.
 
 ### Stopping early (`--to`)
 
@@ -323,24 +324,18 @@ consented checkpoint chain live — handle it per Checkpoints above.
 
 ## 1. Research (`researcher` agent)
 
-Delegate: assess whether this should be built at all (existing libraries /
-OSS / prior art), a light technical overview, and known pitfalls. Have the
-agent read `docs/solutions/INDEX.md` first (if it exists) as the first stop for
-prior art *within this codebase* — durable lessons captured by earlier runs
-(phase 8) live there and may already answer an open question or flag a known
-dead-end. The agent
-returns findings with sources, a build / buy / drop recommendation, and open
-questions split into *decisions for the human* (feed the grill) and
-*empirical uncertainties* (track these — they must not get lost between
-phases). Require each empirical uncertainty to come back as a **directly
-dispatchable one-question brief**: the question, the smallest spike that
-yields a verdict, and enough self-contained context to run without this
-conversation — phase 3 dispatches the grill-independent ones verbatim into
-background spikes, so a brief that needs follow-up questions wastes the slot.
-Spike uncertainties **now** when the build/buy/drop call or the
-upcoming grill would benefit from the answer (research ↔ experiment is a
-loop, per the floating-experimentation rule); the rest carry forward to
-planning. Write the result into the design doc under `## Research`.
+Delegate: assess whether this should be built at all (libraries, OSS, prior
+art), a light technical overview, and known pitfalls. Have the agent read
+`docs/solutions/INDEX.md` first (if it exists) — earlier runs' captured lessons
+may already answer a question or flag a dead-end. It returns findings with
+sources, a build / buy / drop recommendation, and open questions split into
+*decisions for the human* (feed the grill) and *empirical uncertainties* (which
+must not get lost between phases). Require each uncertainty as a **directly
+dispatchable one-question brief**: the question, the smallest spike that yields
+a verdict, and enough context to run without this conversation — phase 3
+dispatches the grill-independent ones verbatim, so a brief needing follow-up
+wastes the slot. Spike **now** when the build/buy/drop call or the grill would
+benefit; the rest carry to planning. Write it into `## Research`.
 
 ## 2. Go/no-go (orchestrator, gate)
 
@@ -353,18 +348,16 @@ build.
 
 ## 3. Requirements (orchestrator, interactive)
 
-**First, use the grill's dead time: dispatch the independent spikes now.**
-The interview is usually the longest wall-clock stretch of the run, and every
-agent is idle during it. Partition phase 1's empirical uncertainties: those
-that are **independent of grill outcomes and self-contained** (their brief
-needs nothing the interview could change) get dispatched *before* the first
-question — present the spike list with a per-experiment tier recommendation
-("while I grill you, these spike in the background — OK?"), then launch one
-`experimenter` per uncertainty, background, `isolation: worktree` (mind the
-committed-state caveat above). Verdicts land while the interview runs; write
-each into `## Experiments` as it arrives. Uncertainties the grill might
-reshape stay undispatched — a spike against requirements that are about to
-move is the one waste case, and the user confirming the list bounds it.
+**First, use the grill's dead time: dispatch the independent spikes now.** The
+interview is the longest wall-clock stretch of the run and every agent is idle
+through it. Partition phase 1's uncertainties: those **independent of grill
+outcomes and self-contained** get dispatched before the first question — present
+the list with a per-experiment tier recommendation ("while I grill you, these
+spike in the background — OK?"), then one `experimenter` each, background,
+`isolation: worktree` (mind the committed-state caveat above). Write verdicts
+into `## Experiments` as they land. Uncertainties the grill might reshape stay
+undispatched — spiking against requirements that are about to move is the one
+waste case, and the user confirming the list bounds it.
 
 Invoke `/grill-me`, seeded with the research section and its *decisions for
 the human* (the empirical uncertainties are not grill material — they wait
@@ -478,7 +471,12 @@ with its checks verbatim, not summarized — the user resizes or
 strikes checks here, while a wrong-sized scheme still costs nothing. **If the plan
 introduces or changes a stakeholder-facing interface**, the sign-off
 artifact includes its concrete instantiation (per the concretizing rule
-at the top), not just the module/data diagram. Apply revisions
+at the top), not just the module/data diagram. **Any invariant the plan calls
+load-bearing must land as a test or a code guard, never as a note for the
+reviewer** — a reviewer is a one-run guard. **And if the gate adds scope,
+restate the size estimate in the same edit**: otherwise the overshoot gets
+attributed at review time to whatever is most visible rather than measured.
+Apply revisions
 (re-entering the loop above if they're structural) until signed off. Record
 the sign-off and the revisions applied in the design doc — one or two lines,
 decision-grade, never a transcript.
@@ -500,10 +498,8 @@ exist yet — counts as authored-first):
 - **Authored-first**: nothing can run yet. Confirm the rubric stands
   frozen in the signed contract; its first run — at phase 7, against the
   first draft — is the red, and its findings are worked off before green.
-  Not a deferral, not an exemption: fixed before building, run at the
-  earliest possible moment, never saved for the end. The motivating PDF's
-  red was the first page review's findings — callout badges sitting on
-  the controls they pointed at, which no assertion could catch.
+  Not a deferral and not an exemption: fixed before building, run at the
+  earliest possible moment, never saved for the end.
 
 Check the box on the red observed (or the rubric confirmed — say which),
 then with checkpoint consent commit `wip(<slug>): validation red` and log
@@ -511,15 +507,13 @@ the SHA in the ledger.
 
 *(Applies wherever the contract has an executable check — a rendered
 deliverable built by a tested script included; skip only when it has none.)*
-When a planned
-public symbol doesn't exist yet, instruct the test-writer to add a **minimal
-stub** for it (signature / dataclass shape only — a body that raises or
-returns nothing, never real logic) marked `# STUB(<feature-slug>):` so the
-red is an assertion / `NotImplementedError` failure rather than an
-import-/collection-time error. Two guards: the stub must still leave the test
-**failing** (a stub that accidentally satisfies a test makes the red fake),
-and it stays minimal — the moment a stub grows logic, the test-writer has
-started implementing. These markers are the contract the phase-7 sweep clears.
+When a planned public symbol doesn't exist yet, have the test-writer add a
+**minimal stub** (signature or dataclass shape only, a body that raises or
+returns nothing) marked `# STUB(<feature-slug>):`, so the red is an assertion
+failure rather than an import error. Two guards: the stub must still leave the
+test **failing** (one that accidentally satisfies it makes the red fake), and it
+stays minimal — the moment a stub grows logic, the test-writer has started
+implementing. These markers are what the phase-7 sweep clears.
 
 ## 7. Build green
 
@@ -553,28 +547,29 @@ design doc as ambiguous, or hits repeated tool failures — is re-dispatched for
 see Model tiering). Step up, don't thrash; a unit still blocked after
 `fable` is a plan problem — kick it back to the plan gate.
 
-**Multi-module fan-out (opt-in Workflow mode).** When the plan has several
-modules, you may offer a Workflow-driven implementation instead of dispatching
-them by hand: you (the brain) author a script that runs one `implementer` per
-module **in sequence** (`for (const m of modules) await agent(prompt, {model:
-'sonnet'})`), each with an exact, pre-written prompt, so the hand-off is
-*deterministic* rather than improvised — that determinism is the win, not tokens
-or speed (see CLAUDE.md → Model tiering).
-
 **Sequential, not parallel — deliberately.** Implementers mutate the shared
-working tree and run the suite to confirm green; concurrent modules would race
+working tree and run the suite to confirm green; concurrent modules race
 (half-written files, one agent's "green" invalidated by another's edit,
-conflicts on shared `__init__`/import/registry files) — and "independent"
-modules routinely still touch those shared files. Real parallelism —
-independence proofs, worktrees, merge-back — is an unsolved problem here,
-sketched in the parked `/tree-build`; don't hand-roll it. Bake the phase-7
-escalation rule into the loop.
-**Recommend the workflow only when modules are
-many; skip it for one or two — and never run it without the user's OK** (a
-workflow can spawn many agents). Un-annotated `agent()` calls inherit the
-*session* model, so set `model: 'sonnet'` on every implementer explicitly or the
-hands saving evaporates. Tests-still-green and the STUB sweep below apply
-identically.
+conflicts on shared `__init__`/registry files) — and "independent" modules
+routinely still touch those shared files. Real parallelism (independence
+proofs, worktrees, merge-back) is unsolved here, sketched in the parked
+`/tree-build`; don't hand-roll it. *With many modules* you may offer a
+Workflow script running one `implementer` per module in sequence, each with a
+pre-written prompt — determinism is the win, not speed — but never without the
+user's OK, and set `model: 'sonnet'` explicitly, since un-annotated `agent()`
+calls inherit the session model.
+
+**Before you check this box, exercise the interface once per state its contract
+declares** — every exit code including the "cannot determine" one, the error
+envelope, the rejection message — and paste the observed output into the design
+doc. Phase 5 signed off an *instantiation*; this is where you confirm the built
+thing matches it in the states nobody previewed. A run that skipped this spent
+both phase-9 fix rounds on comment hygiene while three behavioural defects sat
+in its documented failure paths, unexecuted until phase 10 — and fixing them
+then reopened the phase-12 ship gate. **Then re-read every failure message the
+red left behind**: it must describe the violated expectation, not the
+implementation that violated it, or it hands a future debugger a confident
+wrong diagnosis.
 
 **Before checking this box, if the phase-6 STUB mechanism was used, sweep
 for leftover scaffolding:**
@@ -597,33 +592,31 @@ you, because only you hold the context to write it:
 
 1. **Code-derived docs (`librarian` agent).** Delegate: bring the `docs/`
    codebase map current (it invokes `/sync-docs`) and update the
-   feature-level docs this project keeps to match existing conventions. The
-   librarian reads the code directly, so it needs none of this conversation —
-   but it also can't write what isn't in the code. Write its returned report
-   into the design doc, act on its flags, and log the ledger pair for
-   this pass: a `code-change` for the librarian's edits (doc changes are
-   part of the diff the reviewers must still see) and its event — `close-out: librarian —
-   scope full — checkpoint <SHA it ran on|none> — deferred: none`. Scope
-   `full` is load-bearing: the librarian saw the whole tree, and the
-   phase-12 gate discriminates on exactly that word.
+   feature-level docs this project keeps. It reads the code directly, so it
+   needs none of this conversation — and can't write what isn't in the code.
+   **Route every code-derived reference table here** (exit codes, flag lists,
+   output contracts, which stream a marker goes to) even when it sits in prose
+   you were already editing — those are facts about the code, and yours drift.
+   Write its report into the design doc, act on its flags, and log the pair:
+   a `code-change` for its edits (docs are diff the reviewers must see) and
+   `close-out: librarian — scope full — checkpoint <SHA it ran on|none> —
+   deferred: none`. Scope `full` is load-bearing — the phase-12 gate
+   discriminates on exactly that word.
 2. **Finalize the design doc (orchestrator).** Decisions taken, deviations
    from the plan — this is conversation-derived rationale the librarian
    doesn't have, and the design doc is your resume state, so you own it. If
    the librarian flagged a stale design/rationale doc, fix it here.
 3. **Compound durable lessons → `docs/solutions/` (orchestrator writes).**
-   The whole point of the pipeline compounding: a non-obvious lesson this run
-   surfaced should make the *next* feature cheaper. A solution doc is
-   **conversation-derived** — only you hold the failed-experiment / gotcha
-   context — so by this phase's own source-split rule, *you* write it, not the
-   librarian (which stays code-only). Capture is **conditional, not
-   automatic**: write a doc **only when the run produced a genuinely reusable
-   lesson** — a failed experiment worth not repeating, a gotcha, a non-obvious
-   fix or constraint (much of it already sits in `## Experiments` and the plan
-   deviations). A routine build writes nothing — `docs/solutions/` must stay
-   signal-dense, not a per-feature log. When it qualifies, write
-   `docs/solutions/<category>/<slug>.md` with minimal frontmatter
-   (`name`, `description`). Keep categories light (e.g. `gotchas/`,
-   `patterns/`, `decisions/`); don't invent a deep taxonomy.
+   A non-obvious lesson this run surfaced should make the *next* feature
+   cheaper. It's conversation-derived — only you hold the failed-experiment and
+   gotcha context — so by this phase's own source-split rule you write it, not
+   the librarian. **Conditional, not automatic**: only a genuinely reusable
+   lesson (a failed experiment worth not repeating, a gotcha, a non-obvious
+   constraint). A routine build writes nothing — the store must stay
+   signal-dense, not a per-feature log. When it qualifies:
+   `docs/solutions/<category>/<slug>.md`, minimal frontmatter
+   (`name`, `description`), light categories (`gotchas/`, `patterns/`,
+   `decisions/`) — no deep taxonomy.
 
    **The store self-indexes — `/sync-docs` deliberately skips `docs/` itself,
    so don't expect the librarian to pick these up.** You maintain it: append a
@@ -644,6 +637,14 @@ findings, so skipping this phase just converts it into review blockers.
 
 ## 9. Review loop (contract review + `code-reviewer` + `maintainability-reviewer`)
 
+**Launch phase 10's smoke test now, alongside the reviewers.** The two are
+independent — reviewers read the diff, smoke exercises the built thing — and
+running them together is what keeps smoke's findings inside *this* phase's fix
+round. Deferred until after this phase closes, they arrive as a `code-change`
+that postdates the full close-out and reopens the phase-12 ship gate for all
+three agents; that is the most expensive avoidable detour in this pipeline.
+Phase 10 keeps its number and its box; only its start moves.
+
 Two halves, both mandatory **whatever the medium**:
 
 - **The contract's review**, run by its *review* agent,
@@ -654,26 +655,32 @@ Two halves, both mandatory **whatever the medium**:
   returning).
 - **Both code reviewers on the accumulated diff, in parallel — always**,
   even when the deliverable renders: the code that produced it ships too.
-  The diff's base: the ledger's run base on the first pass, the
-  last reviewed checkpoint on re-reviews. Launch both as fresh subagents
-  with only the diff and the design
+  The diff's base is the last reviewed checkpoint (the ledger's run base on
+  a first pass) — widen to the original scope only when the fix changed a
+  *basis* other findings derived from, per the invalidation rule below, and
+  say in the ledger's `checkpoint` field which of those two fired. Launch
+  both as fresh subagents with only the diff and the design
   doc — no implementation context. That isolation is the point: they check
-  the work, not the intentions.
-- **Show the user each review summary** (verbatim findings, not your gloss).
-- Fix blockers and should-fixes per the fix protocol above, then
-  re-review. **Max 2 fix rounds**; if the third review still
-  has blockers, stop and hand the open findings to the user (live
-  checkpoint chain handled per Checkpoints above).
-  Annotate the round on the checklist box (`- [ ] 9 Review passed (fix
+  the work, not the intentions. **One exception:** to confirm that findings
+  *a reviewer itself authored* were applied as specified, resume that agent
+  rather than dispatching a fresh one — it is checking its own list, so
+  isolation isn't at risk, and it costs a turn against a fresh pass's dozens.
+- **Show the user each review summary — the findings as written, not your
+  narration.** Paraphrasing makes your rendering the only version in the room,
+  and a claim you got wrong then survives a round longer than it should.
+- Fix blockers and should-fixes per the fix protocol above — **the reviewers'
+  and the smoke run's, in one round** — then re-review. **Max 2 fix rounds**; if
+  the third review still has blockers, stop and hand the open findings to the
+  user. Annotate the round on the checklist box (`- [ ] 9 Review passed (fix
   round 1/2)`) — the annotation, not the box state, carries the count (on a
-  phase-11 re-entry the box is already `[x]`); it lives in the design doc,
-  not your memory, and **resets per batch**.
+  phase-11 re-entry the box is already `[x]`), it lives in the design doc, and it
+  **resets per batch**. A fix round invalidates the smoke run too: re-exercise
+  after the last fix, and don't close either box on a stale pass.
 - **A fix that changes the basis of a prior measurement** (a re-crop, a
   re-render, a renumbering) invalidates verification of everything derived
   from that basis, not just the items edited — so the re-review covers the
   same scope as the review that found the defect; a spot-check is not a
-  re-review. (A fix round that re-cropped 6 images was reported complete
-  after 3 pages were checked; re-verification found 7 misplaced badges.)
+  re-review.
 - After each completed pass, append a close-out ledger event (field
   semantics per the phase-0 seed comment: **scope `full` or `delta`**, the
   event's checkpoint = the diffed-from ref) — then, with checkpoint
@@ -687,21 +694,19 @@ Two halves, both mandatory **whatever the medium**:
   under `## Kit suggestions` in your report to the user. Suggestions only —
   see the hard rule above.
 
-## 10. Smoke test
+## 10. Smoke test (starts with phase 9, closes after it)
 
-Exercise the deliverable end to end — the contract's medium tag already says
-what exercising means (start the app and poke it, a full toolchain run on
-representative input, render and read). Breadth is what makes this a smoke
-rather than a repeat of the run that turned phase 7 green: broader input,
-more cases, the adjacent path. A long-lived app's *process* runs from the orchestrator
-(background Bash) so it survives into phase 11; the poking itself is a
-general-purpose agent's job, not yours. Anything rendered gets *looked at*, not just exercised — a
-"checks pass" run is blind to layout, alignment, and styling defects;
-delegate the render-and-look per the preamble's *checked by* delegation
-rule — never silently skipping the look. Land the condensed result in the
-design doc — what was exercised, what was observed, a few lines, never logs.
-Keep the run's actual outputs on disk and say where: phase 11 hands them to
-the user to inspect, and a discarded run has nothing to hand over.
+Exercise the deliverable end to end — the contract's medium tag says what that
+means (start the app and poke it, a full toolchain run, render and read).
+**Breadth** is what makes this a smoke rather than a repeat of phase 7's green:
+broader input, more cases, the adjacent path, and **real-world state rather than
+the fixtures the tests use** — copy an actual target, never write to one. A
+long-lived app's *process* runs from the orchestrator (background Bash) so it
+survives into phase 11; the poking is a general-purpose agent's job. Anything
+rendered gets *looked at* — a "checks pass" run is blind to layout and styling;
+delegate per the preamble's *checked by* rule, never silently skipping the look.
+Land a condensed result in the design doc (a few lines, never logs) and keep the
+run's actual outputs on disk, saying where — phase 11 hands them over.
 
 ## 11. User testing (orchestrator, gate)
 
@@ -720,28 +725,22 @@ deliberately** — every fix still gets reviewed, but only the ship gate pays
 for the full pass:
 
 - **Interim hand-backs get a scoped delta review**: one `code-reviewer` at
-  **brain-top** (this is most interim batches' only review — never a tier to
-  economize on), on the diff since the last reviewed checkpoint (dirty-diff
-  mechanics if checkpoints were declined), its prompt carrying the prior
-  round's findings
-  to check the fixes against, and told explicitly that **doc staleness is
-  known-deferred and not a finding this round** — without that line it
-  re-reports the same stale-docs blocker every batch, by charter. No
-  `librarian`, no `maintainability-reviewer` yet.
-- **The full close-out — `librarian` + both reviewers — runs once, before
-  phase 12** (the ship gate there enforces it). Deferral has a limit: force
-  the full close-out — all three agents, librarian included — early when the
-  accumulated delta stops being local: it adds a public symbol, touches more
-  than one module, or spans three or more hand-backs.
+  **brain-top** (most interim batches' only review — never a tier to economize
+  on), on the diff since the last reviewed checkpoint, its prompt carrying the
+  prior round's findings to check against, and told explicitly that **doc
+  staleness is known-deferred and not a finding this round** — without that line
+  it re-reports the same blocker every batch, by charter. No `librarian`, no
+  `maintainability-reviewer` yet.
+- **The full close-out — `librarian` + both reviewers — runs once, before phase
+  12** (the ship gate enforces it). Force it early when the accumulated delta
+  stops being local: a new public symbol, more than one module, or three or more
+  hand-backs.
 
-Track the loop's state in the design doc, not your head: keep a short
-`## User testing` list (issues found / fixed / last batch closed), log a
-`code-change` ledger event per fix dispatch and a `close-out` event (scope
-`delta`) per delta review, and — with checkpoint consent — commit the
-batch-close checkpoint each time, logging its SHA on its own `checkpoint:`
-line (the next delta diffs from it). What must never happen is
-reaching phase 12 with code no reviewer ever saw, or with the full pass
-older than the last code change.
+Track the loop in the design doc, not your head: a short `## User testing` list
+(found / fixed / last batch closed), a `code-change` event per fix dispatch, a
+`close-out` (scope `delta`) per delta review, and the batch-close checkpoint
+with its SHA on its own line. What must never happen is reaching phase 12 with
+code no reviewer saw, or with the full pass older than the last code change.
 
 The user decides through their own testing when the loop is
 done; don't nudge. Once they're satisfied, phase 12's precondition is what
@@ -769,29 +768,39 @@ with checkpoint consent, commit the pre-12 checkpoint the preamble
 promises, logging its SHA. A gate-filling librarian that edits docs logs
 its `code-change` like any other dispatch — the reviewer runs that follow
 it, on the post-librarian tree, are what close that edit. The phase-11 delta
-reviews deliberately deferred these passes; this is where the deferral is
-collected — and a `code-change` logged *after* an agent's last full pass
-(a phase-9 fix round, a late doc edit) legitimately re-opens that agent's
-gate: that is the gate working, not a ledger error. **If the ledger is missing or the ordering can't be established
-from it (compaction, resumed session): don't guess — re-run all three on the
-current tree** — recorded and checkpointed like the runs above, recreating
-the ledger section first (fresh header, base := current HEAD) if it's
-gone. One redundant close-out pass is the known cost of a crash; a
+reviews deferred these passes; this is where the deferral is collected — and a
+`code-change` logged *after* an agent's last full pass legitimately re-opens
+that agent's gate: the gate working, not a ledger error.
+
+**When a gate agent dies** (stall, API error, watchdog) — expect it here, since
+these are the run's biggest dispatches. **Never log a close-out for an agent
+that didn't finish**: that forges the gate's only evidence and is precisely how
+an un-run agent passes silently. Inspect the tree before re-dispatching even if
+the agent was nominally read-only. A crash is a **retry, not an escalation** —
+escalation is for *blocked*. Retry sequentially rather than in parallel, and
+**narrow the read set before raising the model**: an open-ended dispatch that
+stalls twice often completes at the same tier once given three named files, one
+section each, and permission to answer "no change". If you must substitute a
+different agent type, log it under the agent that actually ran and say the named
+specialist didn't — never relabel, or the ledger stops recording who saw what.
+
+**If the ledger is missing or its ordering can't be established (compaction,
+resumed session): don't guess — re-run all three on the current tree**, recorded
+and checkpointed like the runs above, recreating the ledger section first (fresh
+header, base := current HEAD) if it's gone. One redundant pass is the cost of a
+crash; a
 silently skipped ship gate is not. This is the one hard gate that catches a
 phase-11 loop that batched fixes without ever looping back — skipping it is
 how stale docs or an unreviewed change ships.
 
-On user approval, close out the git state, then commit. With a consented
-checkpoint chain the chain holds the bulk of the work, but either path may
-still carry late uncommitted edits (docs, the design doc) —
-reconciliation is yours, not `/commit`'s: ask squash-or-keep. On
-**squash**, `git reset --soft <run base>` (the ledger header records the
-base), which turns the whole committed feature into staged changes sitting
-alongside those edits, then invoke
-`/commit` as normal. On **keep**, the wip chain stands and `/commit` handles
-the remaining uncommitted work. Without checkpoints,
-invoke `/commit` on the dirty tree as before: implementation, tests, docs,
-and the design doc. Merging/PR is the user's call — say so and stop.
+On user approval, close out the git state, then commit. Either path may carry
+late uncommitted edits, so reconciliation is yours, not `/commit`'s: ask
+squash-or-keep, and say what each costs — **squash orphans every SHA the ledger
+names**, so it also means rewriting those lines into milestone descriptions.
+On **squash**, `git reset --soft <run base>` (the ledger header records it) turns
+the feature into staged changes, then invoke `/commit`. On **keep**, the wip
+chain stands and `/commit` takes the remainder. Without checkpoints, `/commit`
+on the dirty tree. Merging/PR is the user's call — say so and stop.
 
 ## 13. Kit retrospective (`kit-retrospective` agent)
 
@@ -799,26 +808,24 @@ The run is locked in — now reflect on the *pipeline that produced it*, not
 the code (the phase-9 reviewers already owned the diff). Dispatch the
 `kit-retrospective` agent to mine the raw run for kit-improvement ideas.
 
-Your only job is to hand over paths — never a summary. A summary would let
-you frame the run before the agent sees it; the agent reads the unfiltered
-transcript precisely so it isn't influenced. Resolve this session's
-transcript deterministically (concurrency-safe — session ids are unique, so
-this works even with other sessions open in the same repo):
+Hand over paths, never a summary — a summary frames the run before the agent
+sees it, and it reads the unfiltered transcript precisely so it isn't
+influenced. Resolve the transcript deterministically (session ids are unique,
+so this is concurrency-safe):
 
 ```bash
 find ~/.claude/projects -maxdepth 2 -name "$CLAUDE_CODE_SESSION_ID.jsonl"
 ```
 
-Pass the agent: that transcript path, its `<session-id>/subagents/` dir (same
-path with `.jsonl` → `/subagents/`), the design doc path, and the kit
-instruction locations (`.claude/skills/build/SKILL.md`,
-`.claude/agents/*.md`). The agent digests transcripts in its own context and
-returns only a short list of suggestions, so the run's bulk never enters
-yours. Hand over paths, never verdicts about them: the agent resolves its own
-evidence — re-running that `find` and listing the subagents dir itself rather
-than trusting a handed-over path — and never assert on its behalf that
-evidence is absent; an agent that cannot find the record says so instead of
-proceeding.
+Pass: that path, its `<session-id>/subagents/` dir (same path with `.jsonl` →
+`/subagents/`), the design doc, and the kit instruction locations
+(`.claude/skills/build/SKILL.md`, `.claude/agents/*.md`). It digests
+transcripts in its own context, so the run's bulk never enters yours. It
+resolves its own evidence — re-running that `find` itself rather than trusting
+your path — and says so if it can't find the record. **On a long run, tell it
+to sample rather than read linearly, and to skip the suggestions already
+captured**: a linear read of a 25-dispatch transcript is how this agent
+stalls, and its value is what nobody noticed from inside.
 
 **Present the returned suggestions to the user verbatim** under
 `## Kit suggestions` in the design doc (folding in any the phase-9 reviewers
