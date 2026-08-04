@@ -22,7 +22,7 @@ input="$(cat)"
 
 # Bail out gracefully if jq is missing rather than spamming the status line.
 if ! command -v jq >/dev/null 2>&1; then
-  printf 'statusline: jq not found'
+  printf 'statusline: jq not found — install it (winget install jqlang.jq / brew install jq / apt install jq) to see usage'
   exit 0
 fi
 
