@@ -121,15 +121,13 @@ partial-knowledge states too, not just the nominal one** — one sample per exit
 code including "cannot determine", the error envelope, the rejection message.
 A gate that previewed only the happy path is how a documented invariant
 ("exit 0 must never claim knowledge it lacks") gets signed off in prose and
-violated in code. Confirm the instantiation itself (an
-`AskUserQuestion` `preview`, or a throwaway render checked with a specialist agent
-per the paragraph above — a hands-tier dispatch; the judgment sits at the
-gate that confirms it, not with the renderer) rather than a prose description alone — cheapest done
-inline, without a full build/QC cycle. Not every decision needs this — only ones
-where the concrete shape is genuinely load-bearing (a stakeholder will directly
-see or use it); a return type of "a boolean" needs no mock. Pulling one cheap
-instantiation forward catches a wrong shape before any code exists, not after a
-costly rebuild.
+violated in code. Confirm the instantiation itself — an `AskUserQuestion`
+`preview`, or a throwaway render checked with a specialist agent (hands tier;
+the judgment sits at the gate that confirms it, not with the renderer) — rather
+than a prose description, cheapest done inline without a build/QC cycle. Only
+where the shape is genuinely load-bearing: a return type of "a boolean" needs no
+mock. One cheap instantiation forward catches a wrong shape before any code
+exists.
 
 Hard rule for the whole pipeline: **never modify `.claude/` or the
 kit-managed `CLAUDE.md` in this project.** Improvement ideas for those are
@@ -370,18 +368,16 @@ the cheapest inline form.
 
 ## 4. Architecture ↔ experimentation loop
 
-- **Plan** (`planner` agent): the delegation prompt must spell out the
-  architecture-doc format — this *overrides the planner's default plan
-  shape* — and the format follows the deliverable's medium: executable
-  gets modules/classes and methods with explicit public vs internal
-  marking, data flow, Mermaid diagrams (component + sequence where
-  meaningful); other media get the shape that fits them (a section/slide
-  outline with sources and assets for a document or deck, schema +
-  provenance for data) — a planner fabricating modules for a PDF is the
-  same over-heavy failure the contract below exists to prevent. Every
-  plan, whatever the medium, ends with the **validation contract**
-  (below) and **Open unknowns** —
-  claims the plan rests on that need empirical verification.
+- **Plan** (`planner` agent): the delegation prompt spells out the
+  architecture-doc format, *overriding the planner's default*, and that format
+  follows the deliverable's medium — executable gets modules/methods with public
+  vs internal marked, data flow, Mermaid where it helps; other media get what
+  fits (a section outline with sources for a doc or deck, schema + provenance for
+  data), since a planner fabricating modules for a PDF is the same over-heavy
+  failure the contract below prevents. **If units may be built in parallel, the
+  plan must name each one's file set** — that list is what makes disjointness
+  checkable at phase 7. Every plan ends with the **validation contract** (below)
+  and **Open unknowns** — claims it rests on that need empirical verification.
   Pass the research phase's *empirical uncertainties* **and the verdicts
   already landed in `## Experiments`** (the phase-3 background spikes) into
   this prompt and require a disposition for each: resolved with cited
@@ -547,17 +543,33 @@ design doc as ambiguous, or hits repeated tool failures — is re-dispatched for
 see Model tiering). Step up, don't thrash; a unit still blocked after
 `fable` is a plan problem — kick it back to the plan gate.
 
-**Sequential, not parallel — deliberately.** Implementers mutate the shared
-working tree and run the suite to confirm green; concurrent modules race
-(half-written files, one agent's "green" invalidated by another's edit,
-conflicts on shared `__init__`/registry files) — and "independent" modules
-routinely still touch those shared files. Real parallelism (independence
-proofs, worktrees, merge-back) is unsolved here, sketched in the parked
-`/tree-build`; don't hand-roll it. *With many modules* you may offer a
-Workflow script running one `implementer` per module in sequence, each with a
-pre-written prompt — determinism is the win, not speed — but never without the
-user's OK, and set `model: 'sonnet'` explicitly, since un-annotated `agent()`
-calls inherit the session model.
+**Sequential by default, because implementers share one working tree** —
+concurrent units race (half-written files, one agent's green invalidated by
+another's edit, collisions on `__init__`/registry/conftest) and "independent"
+units routinely still touch those files.
+
+**Fanning out hands work (opt-in: `ultracode` on, or the user's explicit OK —
+never unilaterally, a Workflow can spawn many agents).** With several genuinely
+independent units you may author a Workflow script running one hands-tier agent
+per unit. **You own the collisions, and you own them before dispatch:** the plan
+names each unit's file set, you fan out only where those sets are provably
+disjoint, and every shared seam — registry, `__init__`, lockfile, generated
+index, the test harness's own fixtures — belongs to *your* assembly step, never
+to a child. Where disjointness can't be established, either give each unit
+`isolation: worktree` and merge at assembly (a worktree sees only *committed*
+state, so checkpoint first) or keep those units sequential. As each unit closes,
+re-run its check against the shared tree before its checkpoint — a sibling may
+have landed meanwhile — and stage only its own paths. **Don't fan out one or two
+units, or units that mostly touch the same files**: coordination then costs more
+than the wall-clock it buys, and determinism, not speed, is the reason to script
+it at all. Set `model: 'sonnet'` on every `agent()` call explicitly —
+un-annotated calls inherit the session model and the hands saving evaporates.
+
+**When work does fan out, mirror it in the task panel**: one task per unit,
+`blockedBy` for real dependencies, flipped as each starts and closes, so the
+user can see what is running concurrently. The design doc's phase checklist
+stays the durable record — don't keep two trackers of the same thing; the panel
+exists for live visibility of concurrent work, which the checklist can't show.
 
 **Before you check this box, exercise the interface once per state its contract
 declares** — every exit code including the "cannot determine" one, the error
@@ -758,16 +770,14 @@ postdate the last change to the artifact — a re-render after the read
 reopens it. Read the **close-out ledger**, not your memory of
 dispatch order: for each of the three, its last **`full`-scope** close-out
 event must postdate the last `code-change` event. A `delta` entry never
-satisfies this gate — it saw a slice, was told to ignore doc staleness, and
-ran before the final librarian pass. Run whatever is missing now, in this
-order: **`librarian` first, then both reviewers on the post-librarian tree**,
-each at its own phase tier (the ship gate is never the place to economize),
-each on the accumulated diff since its last full pass — and close each run
-out like phase 9 does: append its `close-out` event (scope `full`) and,
-with checkpoint consent, commit the pre-12 checkpoint the preamble
-promises, logging its SHA. A gate-filling librarian that edits docs logs
-its `code-change` like any other dispatch — the reviewer runs that follow
-it, on the post-librarian tree, are what close that edit. The phase-11 delta
+satisfies this gate — it saw a slice and was told to ignore doc staleness. Run
+whatever is missing now, in this order: **`librarian` first, then both reviewers
+on the post-librarian tree**, each at its own phase tier (never the place to
+economize), each on the diff since its last full pass — and close each run out
+like phase 9: append its `close-out` (scope `full`) and, with consent, commit the
+pre-12 checkpoint, logging its SHA. A gate-filling librarian that edits docs logs
+a `code-change` like any dispatch; the reviewer runs that follow it are what
+close that edit. The phase-11 delta
 reviews deferred these passes; this is where the deferral is collected — and a
 `code-change` logged *after* an agent's last full pass legitimately re-opens
 that agent's gate: the gate working, not a ledger error.
