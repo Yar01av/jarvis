@@ -51,15 +51,53 @@ Deploy into a project:
 ```sh
 ./install.sh ~/path/to/project          # copies .claude/ + CLAUDE.md (default)
 ./install.sh ~/path/to/project --link   # symlinks .claude/ → edits here apply everywhere
+./install.sh ~/path/to/project --check  # dry run: report what would change, write nothing
 ```
 
 - **Copy mode** (default): self-contained, safe to commit in the target repo,
   team members get it via git. Re-run `install.sh` to pull in updates.
 - **Link mode**: one source of truth, instant propagation — but the symlink only
   works on your machine, so don't commit it in shared repos.
+- **Check mode** (`--check`, or `--dry-run` / `-n`): prints the same action lines
+  a real run would, each prefixed `would `, plus per-tree counts and any stale
+  top-level entries in `skills/`, `agents/` and `hooks/` — present in the target
+  but not shipped by the kit (a deprecated kit file the kit no longer ships, or
+  a project-local addition the kit never had), which a real run leaves in place
+  (nothing is ever deleted). In `--link` mode, `skills/`/`agents/` aren't
+  tree-scanned (they're symlinked wholesale, not compared file-by-file); `hooks/`
+  — never symlinked — is always tree-scanned and stale-checked under `--check`,
+  link or not. Exit codes make it usable as a gate:
+  **0** nothing would change *and* the settings merge prediction succeeded,
+  **2** changes pending *or* the merge prediction did not succeed,
+  **1** usage error,
+  **3** aborted mid-run (on a plain run the target may be partially written;
+  under `--check` nothing was written) — so
+  `./install.sh ~/proj --check || ./install.sh ~/proj` installs only when
+  something would actually change (or when the prediction was incomplete —
+  a plain run is the safe fallback there too). A prediction fails on invalid
+  JSON in the target's `settings.json`, or when no working python is found —
+  the latter fails every time, so `--check` always exits 2 on such a machine.
+  Look for `— prediction incomplete` in the summary line on **stdout**; the
+  cause is on stderr. Exit 0 must never claim knowledge it lacks.
+  Stale target-only entries are
+  reported but never counted as a change, so a stale-only target still exits
+  0 and the gate is a no-op there. Under `--link`, a check normally reports
+  pending work because every `ln -sfn` is reported as a change regardless of
+  whether the symlink already points there — except when a target path
+  (`.claude/skills` or `.claude/agents`) already exists and isn't a symlink:
+  that path is skipped with a warning instead of linked. Since each of
+  `skills`/`agents` is judged independently, the check only exits 0 when
+  *both* land in that skipped case (both already real, non-symlink
+  directories) and nothing else differs — one skipped path alongside an
+  actual link action still reports pending work. The trailer then says to
+  resolve the skipped paths first, then re-run, rather than promising a
+  plain re-run will fix them on its own.
+
+Unknown flags are rejected (exit 1).
 
 `CLAUDE.md` is kit-managed and always overwritten on re-install (same as
-skills/agents), so workflow and skill updates propagate automatically. Put
+skills/agents, `.claude/hooks/` and `statusline.sh`), so workflow and skill
+updates propagate automatically. Put
 project-specific context in `ProjectCLAUDE.md` — that file is only seeded from
 the template on first install and never touched again.
 
@@ -94,7 +132,8 @@ Notes:
   the session's HEAD instead of the default branch — `/build`'s
   experiment spikes rely on it) is **merged into existing settings on every
   install**, unlike `statusLine`; a project's own `worktree` values win.
-  Manual add is only needed when the merge step warned (no `python3`).
+  Manual add is only needed when the merge step warned (no working Python
+  found — tried `python3`, `python`, `py -3`).
 - The command uses `${CLAUDE_PROJECT_DIR}` so it resolves regardless of which
   subdirectory you're in. If the bar is blank or shows `statusline skipped`,
   the only hard dependency is `jq` on `PATH` (the script degrades gracefully if

@@ -8,8 +8,12 @@ to kit development).
 
 ## Commands
 
-- No build, no test suite. The deliverables are Markdown instruction files
-  and small shell scripts.
+- No build step. The deliverables are Markdown instruction files and small
+  shell scripts.
+- Tests: `bash tests/check-mode.sh` — covers `install.sh`'s dry-run mode
+  (no dependencies; fixtures are built under a scratch dir and the
+  harness refuses to run against anything outside it). The Markdown
+  instruction files have no test suite.
 - Shell scripts (`install.sh`, `.claude/statusline.sh`, hooks): check with
   `shellcheck <file>` if available.
 - Verify a skill loads after editing: malformed frontmatter fails *silently*
@@ -22,8 +26,11 @@ to kit development).
 - `.claude/agents/<name>.md` — subagents; identity from `name:` frontmatter.
 - `CLAUDE.md` — kit-managed, overwritten on install. `ProjectCLAUDE.md` (this
   file) — per-repo, seeded once.
-- There is deliberately no `docs/` tree here — `/sync-docs` output lives in
-  target repos, not in the kit.
+- `docs/` here holds only hand-written material: `docs/designs/` (design and
+  handoff docs) and `docs/solutions/` (captured lessons, with its own
+  `INDEX.md`). There is deliberately **no `/sync-docs`-managed tree and no
+  `docs/INDEX.md`** — that output belongs in target repos, not in the kit, so
+  don't bootstrap one here.
 
 ## Conventions
 
