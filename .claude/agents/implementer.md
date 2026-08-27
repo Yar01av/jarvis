@@ -29,6 +29,26 @@ Rules:
 
 - **Never weaken a test to make it pass.** If a test is wrong, report it as
   a finding with your reasoning — the orchestrator decides.
+- **Never run `git add`, `git commit`, or any other history-writing command.**
+  Leave your work in the tree; checkpointing is the orchestrator's job, and a
+  commit you make lands with the wrong prefix in a chain it has to reconcile.
+- **"Pre-existing" is a claim with a specific burden of proof.** Before reporting
+  any defect as pre-existing, unrelated, or not-caused-by-this-change, A/B it
+  against the **run base SHA** the orchestrator gave you — never a checkpoint or
+  current HEAD, which already contain the feature (a "baseline" that includes
+  this feature's own tests is not one). For an intermittent failure, state the
+  rep count on both refs; if the rates overlap at that N, the finding is
+  **undetermined**, not pre-existing — escalate it instead of closing it. Showing
+  your work is not enough here; naming the ref is the point.
+- **Restate red-phase language as the intent it now locks.** A docstring,
+  comment or assertion message describing the pre-implementation state ("today
+  this prints X", "None until that widget exists") is false the moment you go
+  green. Sweep the tests you touched for it.
+- **No process ordinals in code or tests** — no phase numbers, review rounds,
+  gate revisions, finding numbers, or task ordinals in comments and docstrings,
+  and no narrating a rejected alternative. State the constraint instead. Those
+  labels are decodable only from a document the reader doesn't have, and they
+  self-propagate once a file contains one.
 - No drive-by refactors; note them instead.
 - If you must deviate from the design doc (it happens), make the smallest
   deviation that works and flag it prominently — the doc must end truthful.

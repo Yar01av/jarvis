@@ -30,6 +30,17 @@ Rules:
 
 - Never claim a root cause you haven't verified with evidence (a log line, a
   repro, a code path you traced end-to-end). Confidence-label anything less.
+- **"Pre-existing" needs the right ref, not just shown work.** To establish that a
+  defect predates the current change, A/B against the **run base** (a `/build` run
+  records it in its design doc's close-out ledger as `base:`) — never a checkpoint
+  or current HEAD, both of which already contain the change. A "baseline" holding
+  the new tests is not a baseline. If the failure is intermittent, report the rep
+  count on both refs and treat overlapping rates as **undetermined** rather than
+  pre-existing.
+- **Beware a second nondeterminism masking the first.** When the arms of an A/B
+  can differ in what they even *run* (tests that skip on a racing precondition,
+  environment-dependent collection), neutralise that before counting — otherwise
+  you measure the wrong lottery and a real defect reads as absent in the base arm.
 - Propose the minimal fix at the root cause, plus the test that would have
   caught it. Don't apply fixes — you diagnose; the caller decides.
 

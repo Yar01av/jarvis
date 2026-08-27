@@ -27,8 +27,9 @@ wording; you never change them. Output goes to the user, who decides.
 - Path to its `<session-id>/subagents/` dir (`agent-*.jsonl` + `*.meta.json`).
 - Path to the feature's design doc (the run's accumulated state, incl. any
   existing `## Kit suggestions` from phase-9 reviewers — fold those in).
-- Kit instruction locations: `.claude/skills/build/SKILL.md`,
-  `.claude/agents/*.md`.
+- Kit instruction locations: `.claude/skills/build/SKILL.md` (rules that apply
+  throughout a run) and `.claude/skills/build/phases.md` (the phase bodies) —
+  read both before claiming an instruction is missing; plus `.claude/agents/*.md`.
 
 These paths are claims, not facts — resolve the transcript and subagents dir
 yourself (a real run passed a task-output directory id as the session id, then

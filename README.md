@@ -13,7 +13,8 @@ jarvis/
 ├── install.sh              # Deploys this kit into a target project
 └── .claude/
     ├── settings.json       # Baseline permissions + status line + worktree base (safe defaults)
-    ├── statusline.sh       # Usage tracker rendered in the status bar
+    ├── statusline.py       # Usage tracker rendered in the status bar (Python, no jq)
+    ├── statusline.sh       # Same gauge as a bash/jq script
     ├── hooks/              # Session hooks wired up via settings.json
     ├── agents/             # Subagents (delegated via the Agent tool)
     │   ├── code-reviewer.md
@@ -27,7 +28,7 @@ jarvis/
     │   ├── kit-retrospective.md  # mines a finished build run for kit improvements
     │   └── librarian.md    # owns code-derived docs (codebase map + feature docs)
     └── skills/             # Slash commands (/implement, /fix, /commit, ...)
-        ├── build/          # delivery pipeline for any deliverable: research → grill → plan/experiment → validate → build → review (TDD for code, its discipline generalised for docs/decks/data)
+        ├── build/          # SKILL.md (run-wide rules) + phases.md (phase bodies): delivery pipeline for any deliverable: research → grill → plan/experiment → validate → build → review (TDD for code, its discipline generalised for docs/decks/data)
         ├── tree-build/     # PARKED design record — recursive /build; blocked: subagents can't spawn subagents
         ├── implement/      # explore → plan → build → verify workflow
         ├── fix/            # repro-first bug fixing + fail-on-revert proof
@@ -96,14 +97,14 @@ Deploy into a project:
 Unknown flags are rejected (exit 1).
 
 `CLAUDE.md` is kit-managed and always overwritten on re-install (same as
-skills/agents, `.claude/hooks/` and `statusline.sh`), so workflow and skill
+skills/agents, `.claude/hooks/` and `statusline.py`/`.sh`), so workflow and skill
 updates propagate automatically. Put
 project-specific context in `ProjectCLAUDE.md` — that file is only seeded from
 the template on first install and never touched again.
 
 ## Status line (usage tracker)
 
-`.claude/statusline.sh` renders a single-line usage gauge in the status bar,
+`.claude/statusline.py` (Python port; `statusline.sh` is the bash/jq original) renders a single-line usage gauge in the status bar,
 wired up via the `statusLine` block in `.claude/settings.json`:
 
 ```
@@ -124,7 +125,7 @@ costs no API tokens. The numbers are client-side **estimates** (same as
 Notes:
 - The status line only re-reads settings on **restart** — relaunch Claude Code
   after install for it to appear.
-- `install.sh` always copies `statusline.sh`, but `settings.json` is only
+- `install.sh` always copies `statusline.py` and `statusline.sh`, but `settings.json` is only
   seeded on **first** install. Fresh installs get the `statusLine` block
   automatically; existing projects keep their own `settings.json`, so add the
   block (see `.claude/settings.json` here) manually to opt in.
@@ -136,11 +137,11 @@ Notes:
   found — tried `python3`, `python`, `py -3`).
 - The command uses `${CLAUDE_PROJECT_DIR}` so it resolves regardless of which
   subdirectory you're in. If the bar is blank or shows `statusline skipped`,
-  the only hard dependency is `jq` on `PATH` (the script degrades gracefully if
-  it's missing).
+  the only hard dependency is `python` on `PATH` (`statusline.sh` needs `jq`
+  instead; both degrade gracefully if it's missing).
 - Test standalone:
   ```sh
-  echo '{"context_window":{"used_percentage":42.5,"total_input_tokens":85000,"total_output_tokens":1200}}' | .claude/statusline.sh
+  echo '{"context_window":{"used_percentage":42.5,"total_input_tokens":85000,"total_output_tokens":1200}}' | python .claude/statusline.py
   ```
 
 ## Conventions

@@ -406,13 +406,17 @@ else
   plan_settings_seed true
 fi
 
-# statusline.sh is kit-owned — always overwrite so updates propagate. The
+# statusline.sh/.py are kit-owned — always overwrite so updates propagate. The
 # statusLine block in settings.json points at it; settings.json itself is only
 # seeded on first install (see above), so existing projects must add the block
 # manually to opt in.
 copy_kit_file "$SRC/.claude/statusline.sh" "$TARGET/.claude/statusline.sh" \
   "COPY  .claude/statusline.sh (kit-managed usage tracker)"
 run chmod +x "$TARGET/.claude/statusline.sh"
+# statusline.py is the jq-free Python port the baseline settings.json points at
+# (statusline.sh stays for jq-only setups).
+copy_kit_file "$SRC/.claude/statusline.py" "$TARGET/.claude/statusline.py" \
+  "COPY  .claude/statusline.py (kit-managed usage tracker, Python port)"
 
 # .claude/hooks/ is kit-owned, same always-overwrite shape as skills/agents —
 # the baseline settings.json wires a SessionStart hook to it.

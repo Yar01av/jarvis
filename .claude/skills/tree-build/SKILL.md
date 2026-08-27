@@ -23,7 +23,8 @@ Build the following composite deliverable end to end: $ARGUMENTS
 > script driving phase 7 from the main session, which *can* fan out.
 
 **This skill is `/build` run recursively.** Read
-`.claude/skills/build/SKILL.md` first and run that pipeline: its phases,
+`.claude/skills/build/SKILL.md` first (and `phases.md` beside it, which holds
+the phase bodies) and run that pipeline: its phases,
 gates, checkpoint/ledger machinery, model tiering, and hard rules apply
 verbatim. The amendments below override what recursion touches — the
 contract's shape, phases 6/7/9, and /build's sequential-only dispatch

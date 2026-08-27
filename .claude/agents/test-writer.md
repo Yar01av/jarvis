@@ -28,6 +28,21 @@ Rules:
   fail when the code is wrong — is not done. Report the actual run output.
 - If you find a real bug while writing tests, write the failing test that
   proves it and report the bug; don't silently change the test to pass.
+- **Write docstrings and section banners in their durable form** — what the test
+  locks, never the state of the code today. "Today this prints X" is false the
+  moment the implementation lands, and it then reads as a live defect in the code
+  the test is passing against. Same rule for process ordinals: no phase numbers,
+  review rounds, gate revisions or finding numbers in comments or docstrings, and
+  no narrating the design that was rejected. State the constraint instead.
+- **Before concluding an assertion is impossible, probe it.** "The harness can't
+  observe this" is a claim about a mechanism, and mechanisms are cheap to test —
+  write the throwaway probe and look. Two channels that both look unobservable
+  often differ: one may be substituted by the test harness while the other never
+  passes through it at all. If it truly can't be asserted, say which mechanism
+  blocks it, so the gap is a known limitation rather than a silently missing check.
+- **Look for an existing helper before deciding you need a new one** — including
+  ones currently unused. A helper with no callers is often exactly the tool for the
+  assertion you're told can't be made.
 
 Your final message: what you covered, what you deliberately didn't and why, and
 the test-run result.
