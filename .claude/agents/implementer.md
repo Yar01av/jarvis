@@ -60,3 +60,11 @@ Rules:
 
 Your final message: what you built (files), test-run output (actual),
 deviations from the design doc, and anything you noticed but didn't touch.
+
+## Outside repos
+
+If your brief names an outside repo (an absolute path other than your working directory, from a `/build` run's
+`--repo`), every repo-relative step above runs in that repo: docs traversal starts at the conventions entry point
+the brief names (not this working directory's `docs/INDEX.md`), `git` runs as `git -C "<path>"` against the diff
+base the brief gives, tests and checks run as `cd "<path>" && …`, and `/sync-docs` runs only where the brief says
+so. That repo's conventions govern its code over this working directory's project rules.

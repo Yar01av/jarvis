@@ -1,11 +1,17 @@
 ---
 name: commit
 description: Stage and commit current work as one or more well-scoped commits with clear messages. Invoke ONLY when the user explicitly asked to commit (or a user-initiated workflow like /build reached its commit phase with user approval) — never spontaneously.
-argument-hint: "[optional: message hint or scope]"
-allowed-tools: "Bash(git status) Bash(git diff *) Bash(git log *) Bash(git add *) Bash(git commit *) Bash(python tools/docs_lint.py*)"
+argument-hint: "[--repo <absolute path>] [optional: message hint or scope]"
+allowed-tools: "Bash(git status) Bash(git diff *) Bash(git log *) Bash(git add *) Bash(git commit *) Bash(python tools/docs_lint.py*) Bash(git -C * status*) Bash(git -C * diff *) Bash(git -C * log *) Bash(git -C * add *) Bash(git -C * commit *)"
 ---
 
 Commit the current work. Context hint (may be empty): $ARGUMENTS
+
+**`--repo <absolute path>`** commits in that repo instead of the session's (an
+outside repo of a `/build` run): every git command below runs as
+`git -C "<path>"`, step 1's message style is that repo's, and the docs-lint step
+applies only if that repo has `tools/docs_lint.py`, run there as
+`cd "<path>" && python tools/docs_lint.py` (otherwise skip it and say so).
 
 ## Process
 

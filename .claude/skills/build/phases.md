@@ -19,16 +19,16 @@ bodies are re-read on demand instead, which costs one tool call and cannot be si
 ## 0. Setup (orchestrator)
 
 - Derive a short `<feature-slug>` from the arguments.
-- **This pipeline runs in the repo you were invoked from — it does not run
-  cross-repo, so refuse to.** A session is scoped to one repo: subagents inherit
+- **The repo you were invoked from is the home; building outside it needs
+  express permission.** A session is scoped to one repo: subagents inherit
   that cwd, `/commit` runs there, worktrees branch there, recovery diffs read
-  there. Holding a different target across twelve phases and a dozen delegations
-  will fail — an un-briefed librarian bootstraps the wrong `docs/` tree, a
-  recovery revert wipes the wrong work. So when the deliverable belongs elsewhere
-  ("keep it out of this repo", a standalone project): **stop here.** Create the
-  directory, `git init -b main`, give it one real commit (`git rev-parse HEAD`
-  errors on an unborn HEAD and the ledger needs a base), and tell the user to
-  start a session there and re-invoke. That setup is this phase's whole output.
+  there. Holding another repo implicitly across twelve phases and a dozen
+  delegations fails: an un-briefed librarian bootstraps the wrong `docs/` tree,
+  a recovery revert wipes the wrong work. So an outside repo is never implicit:
+  it is named by `--repo` or by a proposal the user accepts, and then runs under
+  the mechanics in **Building in an outside repo** below. Without either, build in
+  the home. When the deliverable plainly belongs elsewhere, don't refuse and don't
+  quietly build in the home: propose the outside repo with your reason.
 - If `docs/designs/<feature-slug>.md` exists **in the working tree or on
   `feature/<slug>`** — a consented-checkpoint run commits the doc there and
   leaves the tree clean, so from `main` it's invisible; check
@@ -41,11 +41,15 @@ bodies are re-read on demand instead, which costs one tool call and cannot be si
   checkpoint-consent header) — the boxes alone don't carry loop counters,
   checkpoint consent, or deferred close-out work. Tell the user where you're
   picking up. A fresh session typically starts on main — resuming without the
-  checkout writes feature code to the wrong branch.
+  checkout writes feature code to the wrong branch. **With outside repos the
+  checkout happens in each outside repo, and the home's branch is left alone
+  unless the deliverable changes the home** (see below).
 - Otherwise (a genuinely fresh run): **if the tree is dirty, stop and confirm
-  before branching** — a branch cut over someone else's uncommitted work carries
+  before branching** (an unbranched home in outside-repo mode is exempt, per the
+  section below; each outside repo gets the same check) — a branch cut over someone else's uncommitted work carries
   it along, and the checkpoint chain then commits it as yours. Then create
-  `feature/<slug>` from the current HEAD
+  `feature/<slug>` from the current HEAD (in the home only when the deliverable
+  changes the home; outside repos get theirs per the section below)
   and seed the design doc with this checklist (applying
   `--from`, below, before you start work):
 
@@ -97,12 +101,17 @@ bodies are re-read on demand instead, which costs one tool call and cannot be si
        Phase 12 reads THIS, not your memory of dispatch order. Validate before
        reasoning: every SHA named anywhere in the ledger must appear in
        `git log <base>..HEAD` — one absent, or equal to `base` itself, is a
-       gate failure for that line's agent, not an ordering input. -->
+       gate failure for that line's agent, not an ordering input.
+       With outside repos: `base: none (home unbranched, on <branch>)` when the
+       home isn't branched, one `Repo …` header line each, events tagged with
+       their repo, SHAs validated per repo — see "Building in an outside repo". -->
   ```
 
 - **Fresh runs only:** record the run base (`git rev-parse HEAD`) in the
-  ledger header, ask the checkpoint-consent question (see **Checkpoints** in `SKILL.md`), and record the answer there too; on consent, make the first
-  `wip(<slug>): seed design doc` commit now. A resumed run **reads** the
+  ledger header (an unbranched home records `base: none …` instead, plus a
+  `Repo …` line per outside repo), ask the checkpoint-consent question (see **Checkpoints** in `SKILL.md`), and record the answer there too; on consent, make the first
+  `wip(<slug>): seed design doc` commit now (not when the home stays unbranched
+  in outside-repo mode: the doc is then never committed during the run). A resumed run **reads** the
   recorded answer instead of re-asking — ask only if the header is absent,
   and on that resume-ask create the header then, with base := current HEAD.
 
@@ -149,6 +158,148 @@ land before the validate/build spine (a plan-only run is fine); it just defers t
 spine to a later resume, it never skips it. A stopped run leaves a
 consented checkpoint chain live — handle it per **Checkpoints** in `SKILL.md`.
 
+### Building in an outside repo (`--repo`)
+
+The repo the session runs in is the **home**: the knowledge store and the
+preferred place for deliverables. It always holds the design doc, the close-out
+ledger and the `docs/solutions/` lessons. The deliverable's code or files go into
+another repo, an **outside repo**, only with express permission, given one of two
+ways:
+
+- **`--repo <absolute path>`** in the arguments, once per repo; or
+- **a proposal the user accepts.** When the work plainly belongs elsewhere (the
+  code lives in another repo, or it is a standalone project), propose it at
+  whichever phase shows it (most often 0 or 4): a gate question naming the
+  absolute path and your reason, against the alternatives (the home, or a repo
+  already in the run). Only an explicit yes to that path counts; a path mentioned
+  in a brief or suggested by an agent is context, not permission. For a project
+  that doesn't exist yet, the proposal includes creating it (`git init -b main`,
+  one real commit); starting a separate session there instead stays an option to
+  offer.
+
+A permission once recorded in the ledger holds for the whole run, resumes
+included; `--repo` needn't be passed again.
+
+**Setup per outside repo, before anything writes to it** (at phase 0, or the
+moment a proposal is accepted):
+
+1. It must be a git repo with a real commit. No git, or an unborn HEAD: ask to
+   make a local baseline commit (nothing pushed), showing the `git status --short`
+   it would take in, or stop. The baseline is the pre-run state, so it takes the
+   files as they are, and it is never `--allow-empty` unless the directory is
+   empty. Run `/commit`'s hygiene checks over that file list first (no secrets,
+   no `.env`, no build output or large binaries); a repo without a `.gitignore`
+   gets one proposed before the commit.
+2. A dirty tree (after any baseline): stop and confirm, as for the home in a
+   fresh run. Record its `git status --short` as that repo's `dirty-at-start`.
+3. Create `feature/<slug>` there from its current HEAD and record that HEAD as
+   the repo's base.
+4. Make it a working directory of the session (`/add-dir <path>`, or
+   `--add-dir` at launch), or every write there prompts. This lasts one session:
+   redo it on every resume.
+5. Note its conventions entry point: its `docs/INDEX.md` if it keeps one, else
+   `AGENTS.md`, `CLAUDE.md` or `README.md`.
+
+The ledger header gains one line per outside repo:
+`Repo <name>: <abs path> · branch feature/<slug> · base <SHA> · granted: --repo | proposal, phase N · dirty-at-start: <paths>`.
+The checkpoint-consent answer covers every repo of the run, including one added
+later.
+
+**The home in this mode.** If the deliverable changes nothing in the home beyond
+the design doc and lessons, the home is **neither branched nor checkpointed**:
+those files are written in place on whatever branch the home is on (often
+another piece of work's). The ledger header keeps its usual first line, with
+`base: none (home unbranched, on <branch>)`, and its `dirty-at-start:` as usual;
+the fresh-run dirty-tree stop doesn't apply to it, since nothing is branched or
+committed there. Two consequences to tell the user at phase 0: the design doc
+is untracked on that branch (a `git clean` or `git stash -u` in that other work
+takes it with it), and a lesson that would edit a file on the home's
+`dirty-at-start` waits for their OK. Ask it with its cost: the edit lands in that
+other work's uncommitted file and rides along in its next commit. A refusal is a
+deferral recorded in the design doc, not a phase-8 blocker. If a later phase
+finds the deliverable must change the home after all, branch the home then: ask
+which ref to cut from (its default branch, or the current HEAD, which may carry
+another run's wip commits), the dirty-tree stop applies at that moment, and the
+header's `base:` gets that ref's SHA.
+
+**On resume**, check out `feature/<slug>` in each outside repo; if the branch is
+gone, recreate it from that repo's **last logged checkpoint** (its base only when
+none was logged), never from the base when checkpoints exist, or the chain the
+ledger names is lost. An outside repo that is dirty on resume most likely holds
+this run's own half-done work: inspect it per the atomicity rule in `SKILL.md`
+before continuing. **Never switch the home's branch** while it is unbranched; the
+design doc is in its working tree.
+
+**The translation rule: everything about a repo runs in that repo.** Every git
+step this pipeline names (the checkpoint commits and the `git diff --cached
+--stat` before each, recovery diffs, the pre-existing A/B against `base`, review
+diff bases, ledger SHA validation, phase 12's chain check and squash) runs **per
+repo, against that repo's own base and chain**, as `git -C "<abs path>" …`. So
+does every other repo-relative command: the phase-7 STUB grep
+(`grep -rn 'STUB(<slug>)' "<abs path>/<source dirs>"`), a docs lint, test runs,
+the smoke run's processes (`cd "<abs path>" && …` in one Bash call). A grep or
+lint run from the home over outside code matches nothing and reads as a pass,
+which is the no-op-gate trap phase 7 warns about. In the ledger:
+
+- `code-change: <repo> — <agent / what>`; a dispatch touching two repos logs a
+  line per repo. The home's lessons count too: `code-change: home — <path>`.
+- `checkpoint: <repo>@<SHA> — <what>`; a checkpoint moment commits in each
+  outside repo that changed since the last one and logs a line each.
+- A close-out is followed by one checkpoint line per outside repo changed since
+  the previous checkpoint. Phase 12's gate reads them per repo: for every outside
+  repo the run changed, each gate agent's last `full` pass must be followed by
+  that repo's checkpoint, and that SHA must postdate the checkpoint after the
+  repo's last `code-change`, by `git -C <path> log <base>..HEAD`. A repo untouched
+  since the agent's pass is still covered by its earlier line. An unbranched home
+  has no checkpoints: its files are covered when each reviewer's last `full`
+  pass comes after the last `code-change: home` line, in ledger order. The
+  librarian is exempt for the home (it leaves the home's docs alone, per *Docs*
+  below), so lessons written after its pass don't reopen its gate.
+
+**Briefs for outside-repo work.** Subagents start in the home and load the
+home's `CLAUDE.md` and `ProjectCLAUDE.md`, never the outside repo's, so the brief
+has to carry what they would miss. Every dispatch that touches an outside repo,
+reviewers and the librarian included, names:
+
+- the repo's absolute path and the absolute paths in scope (for an isolated
+  spike, the worktree directory below as the only place it may edit);
+- `git -C "<path>"` for any git, and how to run its checks there
+  (`cd "<path>" && <command>` in one Bash call);
+- for a reviewer, the per-repo diffs (`git -C "<path>" diff <base or last
+  reviewed checkpoint>`) and the home's lesson files by path;
+- the repo's conventions entry point, and that **for code in that repo it
+  replaces the home's project rules**: the home's code conventions and its
+  docs-first `docs/INDEX.md` traversal apply to the home's own files only. Where
+  the repo's conventions are silent, follow the surrounding code.
+
+**Isolation.** `isolation: worktree` only ever makes a worktree of the home, so
+for outside-repo code it isolates nothing: an experimenter briefed with an
+outside path edits the live tree, and "spike code never lands on the feature
+branch" breaks silently. For an isolated spike or unit there, run
+`git -C "<path>" worktree add --detach "<dir in your scratchpad>" <SHA>`
+yourself, with the repo's last checkpoint as the SHA, or its base before the
+first one or when checkpoints were declined (detached: `feature/<slug>` is
+already checked out in the repo's main tree, so naming the branch fails), name that directory in the brief, and remove
+it afterwards (`git -C "<path>" worktree remove "<dir>"`). Like any worktree it
+sees committed state only. Fan-out inside an outside repo: disjoint file sets, or
+sequential.
+
+**Docs.** Code-derived docs follow the outside repo's own conventions, in that
+repo. The librarian runs `/sync-docs` there only if the repo already keeps a kit
+`docs/INDEX.md` tree, and never bootstraps one. While the home is unbranched, the
+librarian leaves the home's `docs/` tree alone: no code there changed, and its
+files may be another work stream's uncommitted edits. The design doc and
+`docs/solutions/` lessons stay in the home; the home's docs lint covers the
+home's files.
+
+**Phase 12.** Reconcile each outside repo's chain as phase 12 describes
+(squash-or-keep is asked once for the run, and the chain check runs in every
+outside repo), then `/commit --repo "<abs path>"` per outside repo. The home's design doc
+and lessons stay **uncommitted by default**, and you say so; commit them only on
+a branch the user names. Nothing is pushed and no PR is opened in any repo: a
+permission deny on `git push` doesn't match `git -C <path> push`, so this rule is
+the guard.
+
 ## 1. Research (`researcher` agent)
 
 Delegate: assess whether this should be built at all (libraries, OSS, prior
@@ -181,7 +332,8 @@ through it. Partition phase 1's uncertainties: those **independent of grill
 outcomes and self-contained** get dispatched before the first question — present
 the list with a per-experiment tier recommendation ("while I grill you, these
 spike in the background — OK?"), then one `experimenter` each, background,
-`isolation: worktree` (mind the committed-state caveat above). Write verdicts
+`isolation: worktree` (mind the committed-state caveat above; a spike on an
+outside repo's code is isolated per §0 *Isolation* instead). Write verdicts
 into `## Experiments` as they land. Uncertainties the grill might reshape stay
 undispatched — spiking against requirements that are about to move is the one
 waste case, and the user confirming the list bounds it.
@@ -261,7 +413,8 @@ the cheapest inline form.
   have you actually verified?") before accepting. Bias toward
   experimenting: an hour of spiking is cheaper than a wrong architecture.
 - **Experiment** (`experimenter` agent, one per unknown, parallel when
-  independent, `isolation: worktree`): each agent gets ONE question and
+  independent, `isolation: worktree`, or per §0 *Isolation* for an outside
+  repo's code): each agent gets ONE question and
   answers it with the smallest spike that yields a verdict. Spike code never
   lands on the feature branch; you write the returned verdicts + evidence
   into `## Experiments`.
@@ -427,7 +580,8 @@ disjoint, and every shared seam — registry, `__init__`, lockfile, generated
 index, the test harness's own fixtures — belongs to *your* assembly step, never
 to a child. Where disjointness can't be established, either give each unit
 `isolation: worktree` and merge at assembly (a worktree sees only *committed*
-state, so checkpoint first) or keep those units sequential. As each unit closes,
+state, so checkpoint first; in an outside repo, the worktree you add per §0
+*Isolation*) or keep those units sequential. As each unit closes,
 re-run its check against the shared tree before its checkpoint — a sibling may
 have landed meanwhile — and stage only its own paths. **Don't fan out one or two
 units, or units that mostly touch the same files**: coordination then costs more
@@ -487,6 +641,8 @@ you, because only you hold the context to write it:
    codebase map current (it invokes `/sync-docs`) and update the
    feature-level docs this project keeps. It reads the code directly, so it
    needs none of this conversation — and can't write what isn't in the code.
+   For an outside repo, brief it per §0 *Docs*: that repo's conventions, no
+   bootstrapped tree.
    **Route every code-derived reference table here** (exit codes, flag lists,
    output contracts, which stream a marker goes to) even when it sits in prose
    you were already editing — those are facts about the code, and yours drift.
@@ -730,7 +886,8 @@ cannot catch this — the foreign work is already committed, so it never appears
 On **squash**, `git reset --soft <run base>` (the ledger header records it) turns
 the feature into staged changes, then invoke `/commit`. On **keep**, the wip
 chain stands and `/commit` takes the remainder. Without checkpoints, `/commit`
-on the dirty tree. Merging/PR is the user's call — say so and stop.
+on the dirty tree. With outside repos, all of this runs per repo and the home's
+files follow §0 *Phase 12*. Merging/PR is the user's call — say so and stop.
 
 ## 13. Kit retrospective (`kit-retrospective` agent)
 

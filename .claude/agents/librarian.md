@@ -57,3 +57,11 @@ Your final message is a doc-change report, self-contained:
 - **Flags** — stale conversation-derived docs you found but didn't touch
   (design docs, rationale), and anything blocked by uncommitted work. Hand
   these back; don't paper over them.
+
+## Outside repos
+
+If your brief names an outside repo (an absolute path other than your working directory, from a `/build` run's
+`--repo`), every repo-relative step above runs in that repo: docs traversal starts at the conventions entry point
+the brief names (not this working directory's `docs/INDEX.md`), `git` runs as `git -C "<path>"` against the diff
+base the brief gives, tests and checks run as `cd "<path>" && …`, and `/sync-docs` runs only where the brief says
+so. That repo's conventions govern its code over this working directory's project rules.

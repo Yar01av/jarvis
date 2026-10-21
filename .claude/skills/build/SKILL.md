@@ -1,7 +1,7 @@
 ---
 name: build
 description: Full delivery pipeline for any deliverable — research → go/no-go → grill → plan/experiment loop → validation-first build (TDD for code, the same discipline for every other medium) → docs → independent review → smoke test → user testing → commit → kit retrospective. The main session orchestrates; every work phase runs in a dedicated subagent. For a contained change that needs no signed-off plan, independent review or durable record, use `/implement` instead. A composite deliverable — parts validated differently — is handled here, by naming each part's check additively in one contract.
-argument-hint: "<deliverable description, or existing slug to resume> [--from <phase or name>] [--to <phase or name>] [--brain <fable|opus|sonnet>]"
+argument-hint: "<deliverable description, or existing slug to resume> [--from <phase or name>] [--to <phase or name>] [--brain <fable|opus|sonnet>] [--repo <absolute path of an outside repo>]..."
 disable-model-invocation: true
 ---
 
@@ -71,7 +71,7 @@ progress*; git and the working tree are the source of truth for *code state*
 **A subagent's file edits are not atomic.** When a subagent returns `failed` or
 terminates early (spend/usage limit, API error, crash, context exhaustion), treat
 any files it was editing as possibly left in an incoherent, half-done state.
-Before building on its work, inspect `git diff` and restore a coherent tree —
+Before building on its work, inspect `git diff` (in every repo it touched) and restore a coherent tree —
 revert to the last-good state or finish the edit yourself. **A green test suite is
 not proof of tree coherence:** a half-applied refactor can pass the whole suite.
 This applies to every delegated phase, not one.
@@ -113,7 +113,10 @@ live — say so and offer to reconcile. After any early reconcile, set the ledge
 header's `base` to the new HEAD: a later squash must never rewind past an
 already-reconciled commit. If the user declines checkpoints, the delta-review
 and recovery steps fall back to dirty-diff mechanics (weaker — say so when it
-bites).
+bites). **With outside repos** (`--repo`, or a proposal the user accepted; see
+phases.md §0 *Building in an outside repo*), all of this runs per repo as
+`git -C "<path>"`, against each repo's own base, and the home is only branched
+when the deliverable changes it.
 
 **Experimentation is a floating capability, not a fixed phase.** Whenever
 any phase surfaces a falsifiable uncertainty — research claims an unproven
@@ -124,6 +127,8 @@ Expect multiple back-and-forth cycles across the pipeline; phase 4 is just
 where the loop is most common, not the only place it's allowed. All
 verdicts accumulate in the design doc's `## Experiments`. One tree caveat for
 every worktree-isolated spike: a worktree sees only **committed** state.
+And `isolation: worktree` only worktrees the home: a spike on an outside repo's
+code is isolated by a worktree you add in that repo (phases.md §0 *Isolation*).
 The kit's baseline settings.json pins `worktree.baseRef: "head"` — **confirm
 that pin exists in this project** (a pre-existing install lacks it until
 `install.sh` re-runs) or the spike silently branches from the default branch.
@@ -205,7 +210,7 @@ mock. One cheap instantiation forward catches a wrong shape before any code
 exists.
 
 Hard rule for the whole pipeline: **never modify `.claude/` or the
-kit-managed `CLAUDE.md` in this project.** Improvement ideas for those are
+kit-managed `CLAUDE.md` in this project or in any outside repo of the run.** Improvement ideas for those are
 collected and presented to the user as suggestions only.
 
 ## Model tiering (orchestrator)
@@ -286,7 +291,7 @@ first `[ ]` phase**, treating `[x]` (done) and `[-]` (skipped via `--from`) iden
 
 | # | Phase | Who | Note |
 |---|---|---|---|
-| 0 | Setup | orchestrator | slug, branch, seed the checklist + close-out ledger, checkpoint consent. Also `--from` / `--to`. |
+| 0 | Setup | orchestrator | slug, branch, seed the checklist + close-out ledger, checkpoint consent. Also `--from` / `--to`, and outside repos (`--repo`). |
 | 1 | Research | `researcher` | build/buy/drop + pitfalls; reads `docs/solutions/INDEX.md` first |
 | 2 | Go/no-go | orchestrator | **gate** |
 | 3 | Requirements | orchestrator | **gate** — interactive grill |
