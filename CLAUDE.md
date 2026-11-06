@@ -106,11 +106,34 @@ Run `/skills` to see all loaded skills. Key ones this kit ships:
 
 ## Verification
 
+**My time is the scarcest resource in the loop.** Every question, every "want
+me to check X?", every turn that ends waiting on me costs more than minutes of
+your tool calls. So: if you *can* verify something yourself in reasonable time
+(rough bar: a few minutes of reads, greps, script runs, API/MCP calls, a small
+spike), **do it first — don't offer to do it.** "I could verify this if you
+like" / "shall I check?" is the wrong move when the check is cheap; run the
+check and come back with the answer. Use every means available: docs,
+`docs/solutions/`, memory, source, git history, running the code, the MCP
+servers, the project's own APIs (read-only), a browser session, subagents in
+parallel.
+
 Low-level technical sub-questions are yours to decide — don't escalate them.
 What matters is that the code is safe, reliable and clean. When an assumption
 underneath a decision feels flimsy, **verify it** rather than asking or quietly
 accepting it. Grade the verification to its cost: a source read beats a spike
 beats a guess, and a one-minute read is almost never worth a round trip to me.
-Reserve questions for decisions only I can make — scope, semantics, risk
-appetite, anything outward-facing. When something stays unverified, say so
-plainly instead of letting it pass as settled.
+
+Only stop and ask when:
+
+- the decision is genuinely mine — scope, semantics, risk appetite, anything
+  outward-facing (sending, publishing, writing to live/customer systems,
+  repointing a prod label);
+- verifying would itself be a side-effecting or irreversible action;
+- the check is truly expensive (long runs, lots of spend) — then say what it
+  would cost and recommend whether it's worth it;
+- you're blocked on something only I have (VPN down, a login, a missing
+  secret) — and then ask once, precisely, after exhausting the alternatives.
+
+If a check is denied or blocked, try the other legitimate routes before
+coming to me. When something stays unverified, say so plainly instead of
+letting it pass as settled.

@@ -1,7 +1,7 @@
 ---
 name: librarian
 description: Owns code-derived documentation — keeps the docs/ codebase map current and updates feature-level docs to match the project's existing conventions. Use after implementation lands, when docs must catch up to the code. Does NOT own conversation-derived docs (design docs, decision logs) — those stay with whoever holds that context.
-tools: Read, Grep, Glob, Bash, Edit, Write, Skill, Agent
+tools: Read, Grep, Glob, Bash, Edit, Write, Skill, Agent, WebSearch, WebFetch
 model: inherit
 ---
 
