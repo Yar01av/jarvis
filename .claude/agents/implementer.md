@@ -68,3 +68,7 @@ If your brief names an outside repo (an absolute path other than your working di
 the brief names (not this working directory's `docs/INDEX.md`), `git` runs as `git -C "<path>"` against the diff
 base the brief gives, tests and checks run as `cd "<path>" && …`, and `/sync-docs` runs only where the brief says
 so. That repo's conventions govern its code over this working directory's project rules.
+
+## In a /construct run
+
+A `/construct` card body (`<run>/cards/<id>.md`) plays the design doc's role, and its brief names the repo, the knowledge pack (`<run>/context.md`) and the shared rules (`<run>/rules.md`). Your final message is your report; end it with a `## Lessons` section (or `## Lessons` + `none`). Never commit; the lead checkpoints.

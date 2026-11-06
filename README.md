@@ -30,6 +30,8 @@ jarvis/
     └── skills/             # Slash commands (/implement, /fix, /commit, ...)
         ├── build/          # SKILL.md (run-wide rules) + phases.md (phase bodies): delivery pipeline for any deliverable: research → grill → plan/experiment → validate → build → review (TDD for code, its discipline generalised for docs/decks/data)
         ├── tree-build/     # PARKED design record — recursive /build; blocked: subagents can't spawn subagents
+        ├── construct/      # SKILL.md + briefs.md + board.py (sole board writer, pytest suite in tests/): a team of agents builds from a Kanban board ‡
+        ├── board/          # bring a /construct run's live board viewer back up
         ├── implement/      # explore → plan → build → verify workflow
         ├── fix/            # repro-first bug fixing + fail-on-revert proof
         ├── commit/         # scoped commits + hygiene checks
@@ -44,6 +46,10 @@ jarvis/
 
 † from [mattpocock/skills](https://github.com/mattpocock/skills) (MIT);
 `handoff` is a merge of ours and his.
+‡ `construct/testing-practices.md` vendors adapted excerpts from
+[obra/superpowers](https://github.com/obra/superpowers) (MIT) and
+[trailofbits/skills](https://github.com/trailofbits/skills) (CC BY-SA 4.0); see
+its provenance note.
 
 ## Usage
 

@@ -14,6 +14,9 @@ to kit development).
   (no dependencies; fixtures are built under a scratch dir and the
   harness refuses to run against anything outside it). The Markdown
   instruction files have no test suite.
+- `/construct`'s board tool: `python -m pytest .claude/skills/construct/tests -q -p no:cacheprovider`
+  (Python 3.10+). `test_instruction_budget.py` there is a byte ratchet on the
+  construct/board skill files — cut before raising a budget.
 - Shell scripts (`install.sh`, `.claude/statusline.sh`, hooks): check with
   `shellcheck <file>` if available.
 - Verify a skill loads after editing: malformed frontmatter fails *silently*
